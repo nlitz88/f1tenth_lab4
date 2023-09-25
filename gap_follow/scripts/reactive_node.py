@@ -1,9 +1,13 @@
+from typing import List
 import rclpy
 from rclpy.node import Node
 
 import numpy as np
 from sensor_msgs.msg import LaserScan
 from ackermann_msgs.msg import AckermannDriveStamped, AckermannDrive
+from std_msgs.msg import String
+from rcl_interfaces.msg import SetParametersResult
+from threading import Lock
 
 class ReactiveFollowGap(Node):
     """ 
@@ -16,11 +20,65 @@ class ReactiveFollowGap(Node):
         lidarscan_topic = '/scan'
         drive_topic = '/drive'
 
-        # Set up parameters according to backend robotics parameter file
-        # tutorial.
+        # Set up separate parameter dictionary and then declare the parameters.
+        self.__parameters = {
+            "gap_scan_angle_range_deg": 90,
+            "side_safety_dist_threshold_m": 0.15,
+            "range_upper_bound_m": 3,
+            "disparity_threshold_m": 0.3
+        }
+        self.declare_parameters(namespace="", 
+                                parameters=[(str(key), self.__parameters[key]) for key in self.__parameters])
 
-        # TODO: Subscribe to LIDAR
-        # TODO: Publish to drive
+        # Register a parameter callback.
+        self.add_on_set_parameters_callback(callback=self.__parameter_callback)
+
+        # Variable for robot width.
+        self.__robot_width = 0.1016
+        self.__robot_width_mutex = Lock()
+
+        # Create a scan subscriber.
+        self.__scan_subscriber = self.create_subscription(msg_type=LaserScan,
+                                                          topic=lidarscan_topic, 
+                                                          callback=self.__lidar_callback, 
+                                                          qos_profile=10)
+        # Create a drive publisher.
+        self.__drive_publisher = self.create_publisher(msg_type=AckermannDriveStamped,
+                                                       topic=drive_topic,
+                                                       qos_profile=10)
+        
+    def __parameter_callback(self, params: List[rclpy.Parameter]) -> SetParametersResult:
+        """Function called whenever any of the node's parameters are updated and
+        updates a local copy of the parameter used during publishing.
+        """
+        for param in params:
+            if param.name in list(self.__parameters):
+                self.__parameters[param.name] = param.value
+                self.get_logger().info(f"Received updated version of parameter {str(param.name)}, new value {param.value}")
+        return SetParametersResult(successful=True)
+
+    def robot_description_callback(self, robot_description: String) -> None:
+        """Callback used upon receiving an updated robot description.
+
+        Args:
+            robot_description (String): Robot description as defined in the
+            robot's URDF file.
+        """
+        # TODO: For now, I'm going to forgo implementing this, as there aren't
+        # any messages being published to the /ego_racecar_description topic
+        with self.__robot_width_mutex:
+            # Grab the robot width from the description here.
+            # self.__robot_width = robot_description
+            pass
+
+    def get_robot_width(self) -> float:
+        """Returns the width of the robot in meters.
+
+        Returns:
+            float: Robot width in meters.
+        """
+        with self.__robot_width_mutex:
+            return self.__robot_width
 
     def preprocess_lidar(self, ranges):
         """ Preprocess the LiDAR scan array. Expert implementation includes:
@@ -42,7 +100,7 @@ class ReactiveFollowGap(Node):
         """
         return None
 
-    def lidar_callback(self, data):
+    def __lidar_callback(self, data):
         """ Process each LiDAR scan as per the Follow Gap algorithm & publish an
         AckermannDriveStamped Message.
         """
@@ -102,7 +160,7 @@ class ReactiveFollowGap(Node):
         # first. The beauty is, if I need to add that later, that's a numpy
         # one-liner with boolean-indexing!
 
-        
+
 
 
 def main(args=None):
