@@ -126,16 +126,3 @@ def get_index_range_from_angles(start_angle_rad: float,
                                      angle_increment_rad=angle_increment_rad,
                                      ranges_m=ranges_m)
     return IndexRange(starting_index=start_index, ending_index=end_index)
-
-def get_range_from_angle(angle_rad: float, laser_scan: LaserScan) -> float:
-    """Function that returns the range value at the index in the ranges array
-    that approximately corresponds to the provided angle.
-
-    Args:
-        angle_rad (float): Angle (in radians) to get index of in ranges array.
-        laser_scan (LaserScan): LaserScan message from LiDAR.
-
-    Returns:
-        float: The range that corresponds to the provided angle.
-    """
-    return laser_scan.ranges[get_index_from_angle(angle_rad=angle_rad, laser_scan=laser_scan)]
