@@ -214,7 +214,23 @@ class ReactiveFollowGap(Node):
                 return True
         # Otherwise, return False, as the car isn't too close to an object or
         # wall on either side.
+
+        # TODO: Am I sure that we don't need to also add the check somewhere
+        # here that looks to see if we're currently turning?
+        # I would think that it's not really necessary, as if this returns true,
+        # we can just literally have it steer straight (steering angle=0),
+        # whether we're already steering at that angle or not. UNLESS there's
+        # some advantage to just letting the algorithm handling it at that
+        # point.
         return False
+
+    def __steer_straight(self):
+        """Simple function that, when invoked, will publish a new drive message
+        with steering angle zero and speed unchanged.
+        """
+        new_steering_angle = 0.0
+        new_speed = self.__last_drive_message.drive.speed
+        self.publish_control(new_steering_angle=new_steering_angle, new_velocity=new_speed)
 
     def preprocess_lidar(self, ranges):
         """ Preprocess the LiDAR scan array. Expert implementation includes:
