@@ -325,7 +325,13 @@ class ReactiveFollowGap(Node):
         # gaps found after adjusting based on disparities. Use one or multiple
         # helper functions to implement this.
 
-        # 1. 
+        # 1. Take middle range and look for indices where disparities occur?
+        # 2. For each of those disparities, based on the "direction" of the
+        #    disparity, within the middle ranges array, take the shorter range
+        #    of the two that comprise the disparity and extend that range by n
+        #    indices, where n is computed based on the number of angles needed
+        #    to "produce" the 1/2width of the car at that shorter range
+        #    (circumference calculation).
 
 
 
