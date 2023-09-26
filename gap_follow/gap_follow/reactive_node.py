@@ -63,6 +63,14 @@ class ReactiveFollowGap(Node):
         # good for the sake of being able to recompute those values at runtime
         # as a part of the parameter callback (if one of these values depends on
         # one or more parameters).
+        
+        # Create a "fake" laser_scan message to compute 
+        # init_laser_scan = LaserScan()
+        # init_laser_scan.angle_increment = self.__get_local_parameter("lidar_angle_increment_rad")
+        # init_laser_scan.angle_min = self.__get_local_parameter("lidar_angle_min_rad")
+        # init_laser_scan.angle_max = self.__get_local_parameter("lidar_angle_max_rad")
+        # init_laser_scan.ranges = [0 for _ in range(self.__get_local_parameter("lidar_num_ranges"))]
+
         self.__left_start_angle_rad = math.radians(self.__get_local_parameter("gap_scan_angle_range_deg"))
         self.__left_end_angle_rad = self.__get_local_parameter("lidar_angle_max_rad")
         self.__left_side_index_range: IndexRange = get_index_range_from_angles(start_angle_rad=self.__left_start_angle_rad,

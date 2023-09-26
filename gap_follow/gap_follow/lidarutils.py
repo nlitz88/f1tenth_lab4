@@ -7,19 +7,21 @@ import numpy as np
 
 from sensor_msgs.msg import LaserScan
 
-def angle_in_range(angle_rad: float, laser_scan: LaserScan) -> bool:
+def angle_in_range(angle_rad: float, angle_min_rad: float, angle_max_rad: float) -> bool:
     """Returns whether or not the provided angle is within the minimum and
     maximum angle of the the given laser_scan message.
 
     Args:
         angle_rad (float): The angle to check in radians.
-        laser_scan (LaserScan): The laserscan message containing the minimum and
-        maximum angle of that laserscan.
+        angle_min_rad (float): The minimum (smallest) angle measured by the
+        LiDAR from the scan at hand.
+        angle_max_rad (float): The maximum (most positive) angle measured by the
+        LiDAR from the scan at hand.
 
     Returns:
-        bool: True if angle_rad is within the possible angles, False if not.
+        bool: True if angle_rad is within the possible angles, False if not. 
     """
-    if angle_rad > laser_scan.angle_max or angle_rad < laser_scan.angle_min:
+    if angle_rad > angle_max_rad or angle_rad < angle_min_rad:
         return False
     return True
 
