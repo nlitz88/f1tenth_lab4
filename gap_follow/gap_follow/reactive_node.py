@@ -252,11 +252,11 @@ class ReactiveFollowGap(Node):
         """
         return None
 
-    def __lidar_callback(self, data):
+    def __lidar_callback(self, laser_scan: LaserScan):
         """ Process each LiDAR scan as per the Follow Gap algorithm & publish an
         AckermannDriveStamped Message.
         """
-        ranges = data.ranges
+        ranges = laser_scan.ranges
         proc_ranges = self.preprocess_lidar(ranges)
         
         # TODO:
@@ -312,6 +312,20 @@ class ReactiveFollowGap(Node):
         # first. The beauty is, if I need to add that later, that's a numpy
         # one-liner with boolean-indexing!
 
+        # Before steering based on disparities in LiDAR readings, first check if
+        # the car is getting too close to a wall or obstacles on either side. If
+        # so, stop turning and steer straight so that we don't turn too early
+        # and hit the wall.
+        if self.__side_too_close(laser_scan=laser_scan):
+            self.get_logger().warning(f"Car got too close to object on its side--steering straight to avoid collision due to early turn!")
+            self.__steer_straight()
+            return
+        
+        # Otherwise, look for disparities in LiDAR data and steer according to
+        # gaps found after adjusting based on disparities. Use one or multiple
+        # helper functions to implement this.
+
+        # 1. 
 
 
 
