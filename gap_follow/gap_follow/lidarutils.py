@@ -108,7 +108,7 @@ def get_index_range_from_angles(start_angle_rad: float,
         angle_increment_rad (float): The increment (in radians) between each
         range within the LiDAR scan's ranges array.
         ranges_m (List[float]): The array of range values that comes from the
-        LaserScan message at hand.
+        LaserScan message at hand (measured in meters).
 
     Returns:
         IndexRange: An IndexRange dataclass instance containing the starting and
