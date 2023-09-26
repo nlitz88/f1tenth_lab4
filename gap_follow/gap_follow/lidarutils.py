@@ -55,21 +55,36 @@ def get_index_from_angle(angle_rad: float, laser_scan: LaserScan) -> int:
     angle_index = np.clip(a=adjusted_angle_index, a_min=min_index, a_max=max_index)
     return angle_index
 
-@dataclass
 class IndexRange:
-    starting_index: int
-    ending_index: int
+
+    def __init__(self, starting_index: int, ending_index: int):
+        self.starting_index: int
+        self.ending_index: int
+        # Set step for iterator based on if ending index > or < the starting
+        # index.
+        if starting_index < ending_index:
+            self.__step = 1
+        else:
+            self.__step = -1
+
+    def __iter__(self):
+        for i in range(__start=self.starting_index, __stop=self.ending_index, __step=self.__step):
+            yield i
 
 def get_index_range_from_angles(start_angle_rad: float, end_angle_rad: float, laser_scan: LaserScan) -> IndexRange:
     """Returns an IndexRange containing the starting and ending index of the
     values in the laser_scan's ranges array that correspond to the provided
-    starting and ending angle, respectively.
+    starting and ending angle, respectively. NOTE that it would make the most
+    sense for the provided start_angle to the be the lesser or more-negative
+    angle, where the end_angle is always greater than the start_angle. This way,
+    the indices returned are can be traversed in order in the corresponding
+    array.
 
     Args:
         start_angle_rad (float): The first angle (in radians) you want the index
         of.
         end_angle_rad (float): The second angle (in radians) you want the index
-        of.
+        of. Should be greater than the start angle.
         laser_scan (LaserScan): The LaserScan containing the ranges you want the
         indices from.
 

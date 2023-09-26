@@ -27,10 +27,10 @@ class ReactiveFollowGap(Node):
         self.__parameters_mutex = Lock()
         self.__parameters = {
             "gap_scan_angle_range_deg": 90,
-            "side_safety_dist_threshold_m": 0.15,
+            "side_safety_dist_minimum_m": 0.15,
             "range_upper_bound_m": 3,
             "disparity_threshold_m": 0.3,
-            
+
         }
         self.declare_parameters(namespace="", 
                                 parameters=[(str(key), self.__parameters[key]) for key in self.__parameters])
@@ -154,37 +154,38 @@ class ReactiveFollowGap(Node):
         # 1. Look through the ranges from the laser_scan on both the left and
         #    right past the 90 degree mark. Basically, want to look through the
         #    ranges between these angles and identify if there are any ranges
-        #    that are below the "side_safety_dist_threshold_m" value.
+        #    that are below the "side_safety_dist_minimum_m" value.
 
-        # TODO: So, this is the key: Write out the functionality first so that
-        # I'm actually trying something and making progress, and then figure out
-        # the best way to wrap up that functionality into a convenience
-        # function later. Granted, this isn't great practice for designing an
-        # interface, but I've also been wasting too much time not writing
-        # code--so I kind of need to try this! Given my time constraint--it's
-        # kinda the best option.
+        # Grab ranges from laser_scan and threshold value from parameters.
+        ranges = laser_scan.ranges
+        minimum_dist = self.__get_local_parameter("side_safety_dist_minimum_m")
 
         # Get starting and ending indices for left side zone.
         left_start_angle_rad = math.radians(self.__get_local_parameter("gap_scan_angle_range_deg"))
         left_end_angle_rad = laser_scan.angle_max
+        left_side_index_range: lidarutils.IndexRange = lidarutils.get_index_range_from_angles(start_angle_rad=left_start_angle_rad,
+                                                                                              end_angle_rad=left_end_angle_rad,
+                                                                                              laser_scan=laser_scan)
+        # Look through the ranges between the left side indices to see if there
+        # are any that fall under the threshold.
+        for index in left_side_index_range:
+            if ranges[index] < minimum_dist:
+                return True
 
-        left_start_index = lidarutils.get_index_from_angle(angle_rad=left_start_angle_rad, laser_scan=laser_scan)
-        left_end_index = lidarutils.get_index_from_angle(angle_rad=left_end_angle_rad, laser_scan=laser_scan)
-        
         # Get Starting and ending indices for the right side zone.
-        right_start_angle_rad = -math.degrees(self.__get_local_parameter("gap_scan_angle_range_deg"))
-        right_end_angle_rad = laser_scan.angle_min
-        
-        right_start_index = lidarutils.get_index_from_angle(angle_rad=right_start_angle_rad, laser_scan=laser_scan)
-        right_end_index = lidarutils.get_index_from_angle(angle_rad=right_end_angle_rad, laser_scan=laser_scan)
-
-
-
-        # 2. If any of those values fall below the safety range, then return
-        #    true. Otherwise, return false.
-
-        pass
-
+        right_start_angle_rad = laser_scan.angle_min
+        right_end_angle_rad = -math.degrees(self.__get_local_parameter("gap_scan_angle_range_deg"))
+        right_side_index_range: lidarutils.IndexRange = lidarutils.get_index_range_from_angles(start_angle_rad=right_start_angle_rad,
+                                                                                               end_angle_rad=right_end_angle_rad,
+                                                                                               laser_scan=laser_scan)
+        # Look through the ranges between the right side indices to see if there
+        # are any that fall under the threshold.
+        for index in right_side_index_range:
+            if ranges[index] < minimum_dist:
+                return True
+        # Otherwise, return False, as the car isn't too close to an object or
+        # wall on either side.
+        return False
 
     def preprocess_lidar(self, ranges):
         """ Preprocess the LiDAR scan array. Expert implementation includes:
