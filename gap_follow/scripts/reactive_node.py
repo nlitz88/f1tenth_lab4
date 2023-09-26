@@ -10,7 +10,7 @@ from rcl_interfaces.msg import SetParametersResult
 from threading import Lock
 
 class ReactiveFollowGap(Node):
-    """ 
+    """
     Implement Wall Following on the car
     This is just a template, you are free to implement your own node!
     """
@@ -33,10 +33,6 @@ class ReactiveFollowGap(Node):
         # Register a parameter callback.
         self.add_on_set_parameters_callback(callback=self.__parameter_callback)
 
-        # Variable for robot width.
-        self.__robot_width = 0.1016
-        self.__robot_width_mutex = Lock()
-
         # Create a scan subscriber.
         self.__scan_subscriber = self.create_subscription(msg_type=LaserScan,
                                                           topic=lidarscan_topic, 
@@ -46,6 +42,17 @@ class ReactiveFollowGap(Node):
         self.__drive_publisher = self.create_publisher(msg_type=AckermannDriveStamped,
                                                        topic=drive_topic,
                                                        qos_profile=10)
+        
+        # Variable for robot width.
+        self.__robot_width = 0.1016
+        self.__robot_width_mutex = Lock()
+
+        # TODO: Call functions or add code here to initialize values that can be
+        # computed up front / at initialization. Writing a function could be
+        # good for the sake of being able to recompute those values at runtime
+        # as a part of the parameter callback (if one of these values depends on
+        # one or more parameters).
+    
         
     def __parameter_callback(self, params: List[rclpy.Parameter]) -> SetParametersResult:
         """Function called whenever any of the node's parameters are updated and
@@ -79,6 +86,27 @@ class ReactiveFollowGap(Node):
         """
         with self.__robot_width_mutex:
             return self.__robot_width
+        
+    def publish_control(self, new_steering_angle: float, 
+                        new_velocity: float) -> None:
+        """Helper function that handles publishing the provided steering angle
+        and velocity to the drive topic. Constructs an AckermannDriveStamped
+        message and publishes it to the drive topic.
+
+        :param new_steering_angle: The steering angle (in radians) to be
+            commanded. 
+        :type steering_angle: float
+        :param new_velocity: The velocity (in m/s) to be commanded.
+        :type velocity: float
+        """
+        # Construct new Ackermann drive message, set velocity and steering
+        # angle.
+        drive_message = AckermannDriveStamped()
+        drive_message.drive.steering_angle = new_steering_angle
+        drive_message.drive.speed = new_velocity
+        # Publish the populated message to the drive topic.
+        self.__drive_publisher.publish(drive_message)
+        return
 
     def preprocess_lidar(self, ranges):
         """ Preprocess the LiDAR scan array. Expert implementation includes:
