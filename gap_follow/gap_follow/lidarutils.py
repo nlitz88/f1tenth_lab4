@@ -82,7 +82,12 @@ class IndexRange:
         for i in range(__start=self.starting_index, __stop=self.ending_index, __step=self.__step):
             yield i
 
-def get_index_range_from_angles(start_angle_rad: float, end_angle_rad: float, laser_scan: LaserScan) -> IndexRange:
+def get_index_range_from_angles(start_angle_rad: float,
+                                end_angle_rad: float,
+                                angle_min_rad: float, 
+                                angle_max_rad: float,
+                                angle_increment_rad: float, 
+                                ranges_m: List[float]) -> IndexRange:
     """Returns an IndexRange containing the starting and ending index of the
     values in the laser_scan's ranges array that correspond to the provided
     starting and ending angle, respectively. NOTE that it would make the most
@@ -96,15 +101,30 @@ def get_index_range_from_angles(start_angle_rad: float, end_angle_rad: float, la
         of.
         end_angle_rad (float): The second angle (in radians) you want the index
         of. Should be greater than the start angle.
-        laser_scan (LaserScan): The LaserScan containing the ranges you want the
-        indices from.
+        angle_min_rad (float): The minimum (smallest) angle measured by the
+        LiDAR from the scan at hand.
+        angle_max_rad (float): The maximum (most positive) angle measured by the
+        LiDAR from the scan at hand.
+        angle_increment_rad (float): The increment (in radians) between each
+        range within the LiDAR scan's ranges array.
+        ranges_m (List[float]): The array of range values that comes from the
+        LaserScan message at hand.
 
     Returns:
         IndexRange: An IndexRange dataclass instance containing the starting and
         ending index.
     """
-    start_index = get_index_from_angle(angle_rad=start_angle_rad, laser_scan=laser_scan)
-    end_index = get_index_from_angle(angle_rad=end_angle_rad, laser_scan=laser_scan)
+    
+    start_index = get_index_from_angle(angle_rad=start_angle_rad,
+                                       angle_min_rad=angle_min_rad,
+                                       angle_max_rad=angle_max_rad,
+                                       angle_increment_rad=angle_increment_rad,
+                                       ranges_m=ranges_m)
+    end_index = get_index_from_angle(angle_rad=end_angle_rad,
+                                     angle_min_rad=angle_min_rad,
+                                     angle_max_rad=angle_max_rad,
+                                     angle_increment_rad=angle_increment_rad,
+                                     ranges_m=ranges_m)
     return IndexRange(starting_index=start_index, ending_index=end_index)
 
 def get_range_from_angle(angle_rad: float, laser_scan: LaserScan) -> float:
