@@ -1,6 +1,7 @@
 """Python utility module containing common lidar utility functions.
 """
 import math
+from typing import Tuple
 import numpy as np
 
 from sensor_msgs.msg import LaserScan
@@ -53,8 +54,23 @@ def get_index_from_angle(angle_rad: float, laser_scan: LaserScan) -> int:
     angle_index = np.clip(a=adjusted_angle_index, a_min=min_index, a_max=max_index)
     return angle_index
 
-def get_range_from_angle(angle_rad: float, laser_scan: LaserScan) -> float:
-    pass
+def get_index_range_from_angles(start_angle_rad: float, end_angle_rad: float, laser_scan: LaserScan) -> Tuple[int, int]:
 
-def get_angle_from_index():
-    pass
+    start_index = get_index_from_angle(angle_rad=start_angle_rad, laser_scan=laser_scan)
+    end_index = get_index_from_angle(angle_rad=end_angle_rad, laser_scan=laser_scan)
+    return (start_index, end_index)
+
+    
+
+def get_range_from_angle(angle_rad: float, laser_scan: LaserScan) -> float:
+    """Function that returns the range value at the index in the ranges array
+    that approximately corresponds to the provided angle.
+
+    Args:
+        angle_rad (float): Angle (in radians) to get index of in ranges array.
+        laser_scan (LaserScan): LaserScan message from LiDAR.
+
+    Returns:
+        float: The range that corresponds to the provided angle.
+    """
+    return laser_scan.ranges[get_index_from_angle(angle_rad=angle_rad, laser_scan=laser_scan)]

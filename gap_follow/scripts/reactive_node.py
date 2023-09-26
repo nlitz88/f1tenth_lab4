@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Any
 import rclpy
 from rclpy.node import Node
 
@@ -21,6 +21,7 @@ class ReactiveFollowGap(Node):
         drive_topic = '/drive'
 
         # Set up separate parameter dictionary and then declare the parameters.
+        self.__parameters_mutex = Lock()
         self.__parameters = {
             "gap_scan_angle_range_deg": 90,
             "side_safety_dist_threshold_m": 0.15,
@@ -47,22 +48,50 @@ class ReactiveFollowGap(Node):
         self.__robot_width = 0.1016
         self.__robot_width_mutex = Lock()
 
+        # Store last drive message.
+        self.__last_drive_message = AckermannDriveStamped()
+
         # TODO: Call functions or add code here to initialize values that can be
         # computed up front / at initialization. Writing a function could be
         # good for the sake of being able to recompute those values at runtime
         # as a part of the parameter callback (if one of these values depends on
         # one or more parameters).
-    
+
+    def __get_local_parameter(self, param_name: str) -> Any:
+        """Function to get the value of a parameter from the parameter
+        dictionary maintained locally by the node.
+
+        Args:
+            param_name (str): The key for the parameter in the self.__parameters
+            dictionary.
+
+        Raises:
+            exc: KeyError exception if the provided param_name isn't a key in
+            the self.__parameters dictionary.
+
+        Returns:
+            Any: The value of the parameter if it exists in the parameters
+            dictionary.
+        """
+        with self.__parameters_mutex:
+            try:
+                value = self.__parameters[param_name]
+            except KeyError as exc:
+                self.get_logger().error(f"Failed to get parameter with name {param_name}. Key not found in parameter dictionary!")
+                raise exc
+            else:
+                return value
         
     def __parameter_callback(self, params: List[rclpy.Parameter]) -> SetParametersResult:
         """Function called whenever any of the node's parameters are updated and
         updates a local copy of the parameter used during publishing.
         """
-        for param in params:
-            if param.name in list(self.__parameters):
-                self.__parameters[param.name] = param.value
-                self.get_logger().info(f"Received updated version of parameter {str(param.name)}, new value {param.value}")
-        return SetParametersResult(successful=True)
+        with self.__parameters_mutex:
+            for param in params:
+                if param.name in list(self.__parameters):
+                    self.__parameters[param.name] = param.value
+                    self.get_logger().info(f"Received updated version of parameter {str(param.name)}, new value {param.value}")
+            return SetParametersResult(successful=True)
 
     def robot_description_callback(self, robot_description: String) -> None:
         """Callback used upon receiving an updated robot description.
@@ -107,6 +136,22 @@ class ReactiveFollowGap(Node):
         # Publish the populated message to the drive topic.
         self.__drive_publisher.publish(drive_message)
         return
+    
+    # Maybe as a general rule of thumb (which sorta stems from stateful design:
+    # separate the check from the control). That is, no state should have any
+    # conditionally executed logic--therefore, if we're trying to model our
+    # functions properly (with some hint of stateful design thrown in there),
+    # then we should separate the logic from the actions. The logic should
+    # determine which state we go into next--not what action we take here and
+    # now!
+
+    def __side_too_close(self, laser_scan: LaserScan) -> bool:
+
+        # 1. Look through the ranges from the laser_scan on both the left and
+        #    right past the 90 degree mark. Basically, want to look through the
+        #    ranges between these angles and identify if there are any ranges
+        #    that are below the "side_safety_dist_threshold_m" value.
+
 
     def preprocess_lidar(self, ranges):
         """ Preprocess the LiDAR scan array. Expert implementation includes:
