@@ -1,5 +1,6 @@
 """Python utility module containing common lidar utility functions.
 """
+from dataclasses import dataclass
 import math
 from typing import Tuple
 import numpy as np
@@ -54,13 +55,31 @@ def get_index_from_angle(angle_rad: float, laser_scan: LaserScan) -> int:
     angle_index = np.clip(a=adjusted_angle_index, a_min=min_index, a_max=max_index)
     return angle_index
 
-def get_index_range_from_angles(start_angle_rad: float, end_angle_rad: float, laser_scan: LaserScan) -> Tuple[int, int]:
+@dataclass
+class IndexRange:
+    starting_index: int
+    ending_index: int
 
+def get_index_range_from_angles(start_angle_rad: float, end_angle_rad: float, laser_scan: LaserScan) -> IndexRange:
+    """Returns an IndexRange containing the starting and ending index of the
+    values in the laser_scan's ranges array that correspond to the provided
+    starting and ending angle, respectively.
+
+    Args:
+        start_angle_rad (float): The first angle (in radians) you want the index
+        of.
+        end_angle_rad (float): The second angle (in radians) you want the index
+        of.
+        laser_scan (LaserScan): The LaserScan containing the ranges you want the
+        indices from.
+
+    Returns:
+        IndexRange: An IndexRange dataclass instance containing the starting and
+        ending index.
+    """
     start_index = get_index_from_angle(angle_rad=start_angle_rad, laser_scan=laser_scan)
     end_index = get_index_from_angle(angle_rad=end_angle_rad, laser_scan=laser_scan)
-    return (start_index, end_index)
-
-    
+    return IndexRange(starting_index=start_index, ending_index=end_index)
 
 def get_range_from_angle(angle_rad: float, laser_scan: LaserScan) -> float:
     """Function that returns the range value at the index in the ranges array

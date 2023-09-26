@@ -29,7 +29,8 @@ class ReactiveFollowGap(Node):
             "gap_scan_angle_range_deg": 90,
             "side_safety_dist_threshold_m": 0.15,
             "range_upper_bound_m": 3,
-            "disparity_threshold_m": 0.3
+            "disparity_threshold_m": 0.3,
+            
         }
         self.declare_parameters(namespace="", 
                                 parameters=[(str(key), self.__parameters[key]) for key in self.__parameters])
