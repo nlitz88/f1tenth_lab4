@@ -10,7 +10,7 @@ from std_msgs.msg import String
 from rcl_interfaces.msg import SetParametersResult
 from threading import Lock
 
-import lidarutils
+from lidarutils import IndexRange, get_index_range_from_angles
 
 class ReactiveFollowGap(Node):
     """
@@ -30,7 +30,10 @@ class ReactiveFollowGap(Node):
             "side_safety_dist_minimum_m": 0.15,
             "range_upper_bound_m": 3,
             "disparity_threshold_m": 0.3,
-
+            "lidar_angle_min_rad": -2.3499999046325684,
+            "lidar_angle_max_rad": 2.3499999046325684,
+            "lidar_angle_increment_rad": 0.004351851996034384,
+            "lidar_num_ranges": 1080
         }
         self.declare_parameters(namespace="", 
                                 parameters=[(str(key), self.__parameters[key]) for key in self.__parameters])
@@ -60,6 +63,18 @@ class ReactiveFollowGap(Node):
         # good for the sake of being able to recompute those values at runtime
         # as a part of the parameter callback (if one of these values depends on
         # one or more parameters).
+        self.__left_start_angle_rad = math.radians(self.__get_local_parameter("gap_scan_angle_range_deg"))
+        self.__left_end_angle_rad = self.__get_local_parameter("lidar_angle_max_rad")
+        self.__left_side_index_range: IndexRange = get_index_range_from_angles(start_angle_rad=self.__left_start_angle_rad,
+                                                                                              end_angle_rad=self.__left_end_angle_rad,
+                                                                                              laser_scan=laser_scan)
+        
+        self.__right_start_angle_rad = self.__get_local_parameter("lidar_angle_min_rad")
+        self.__right_end_angle_rad = -math.degrees(self.__get_local_parameter("gap_scan_angle_range_deg"))
+        self.__right_side_index_range: IndexRange = get_index_range_from_angles(start_angle_rad=self.__right_start_angle_rad,
+                                                                                               end_angle_rad=self.__right_end_angle_rad,
+                                                                                               laser_scan=laser_scan)
+        
 
     def __get_local_parameter(self, param_name: str) -> Any:
         """Function to get the value of a parameter from the parameter
@@ -150,37 +165,28 @@ class ReactiveFollowGap(Node):
     # now!
 
     def __side_too_close(self, laser_scan: LaserScan) -> bool:
+        """Checks whether the robot is too close to an obstacle or wall on
+        either side. Takes the ranges on its side and compares them against a
+        minimum distance threshold. 
 
-        # 1. Look through the ranges from the laser_scan on both the left and
-        #    right past the 90 degree mark. Basically, want to look through the
-        #    ranges between these angles and identify if there are any ranges
-        #    that are below the "side_safety_dist_minimum_m" value.
+        Args:
+            laser_scan (LaserScan): LaserScan message from LiDAR containing the
+            ranges that'll be evalauted.
 
+        Returns:
+            bool: True if the car is too close, False if not.
+        """
         # Grab ranges from laser_scan and threshold value from parameters.
         ranges = laser_scan.ranges
-        minimum_dist = self.__get_local_parameter("side_safety_dist_minimum_m")
-
-        # Get starting and ending indices for left side zone.
-        left_start_angle_rad = math.radians(self.__get_local_parameter("gap_scan_angle_range_deg"))
-        left_end_angle_rad = laser_scan.angle_max
-        left_side_index_range: lidarutils.IndexRange = lidarutils.get_index_range_from_angles(start_angle_rad=left_start_angle_rad,
-                                                                                              end_angle_rad=left_end_angle_rad,
-                                                                                              laser_scan=laser_scan)
+        minimum_dist = self.__get_local_parameter("side_safety_dist_minimum_m")        
         # Look through the ranges between the left side indices to see if there
         # are any that fall under the threshold.
-        for index in left_side_index_range:
+        for index in self.__left_side_index_range:
             if ranges[index] < minimum_dist:
-                return True
-
-        # Get Starting and ending indices for the right side zone.
-        right_start_angle_rad = laser_scan.angle_min
-        right_end_angle_rad = -math.degrees(self.__get_local_parameter("gap_scan_angle_range_deg"))
-        right_side_index_range: lidarutils.IndexRange = lidarutils.get_index_range_from_angles(start_angle_rad=right_start_angle_rad,
-                                                                                               end_angle_rad=right_end_angle_rad,
-                                                                                               laser_scan=laser_scan)
+                return True        
         # Look through the ranges between the right side indices to see if there
         # are any that fall under the threshold.
-        for index in right_side_index_range:
+        for index in self.__right_side_index_range:
             if ranges[index] < minimum_dist:
                 return True
         # Otherwise, return False, as the car isn't too close to an object or
