@@ -69,7 +69,6 @@ class ReactiveFollowGap(Node):
         angle_min = self.__get_local_parameter("lidar_angle_min_rad")
         angle_max = self.__get_local_parameter("lidar_angle_max_rad")
         num_ranges = self.__get_local_parameter("lidar_num_ranges")
-        fake_ranges = [0 for _ in range(num_ranges)]
         gap_scan_angle_range_rad = math.radians(self.__get_local_parameter("gap_scan_angle_range_deg"))
         # Get lower left side index range.
         self.__left_start_angle_rad = gap_scan_angle_range_rad
@@ -79,7 +78,7 @@ class ReactiveFollowGap(Node):
                                                                                angle_min_rad=angle_min,
                                                                                angle_max=angle_max,
                                                                                angle_increment_rad=angle_increment,
-                                                                               ranges_m=fake_ranges)
+                                                                               num_ranges=num_ranges)
         # Get lower right side index range.
         self.__right_start_angle_rad = self.__get_local_parameter("lidar_angle_min_rad")
         self.__right_end_angle_rad = -gap_scan_angle_range_rad
@@ -88,7 +87,7 @@ class ReactiveFollowGap(Node):
                                                                                 angle_min_rad=angle_min,
                                                                                 angle_max=angle_max,
                                                                                 angle_increment_rad=angle_increment,
-                                                                                ranges_m=fake_ranges)
+                                                                                num_ranges=num_ranges)
         # Get the (main) middle index range.
         self.__middle_start_angle_rad = -gap_scan_angle_range_rad
         self.__middle_end_angle_rad = gap_scan_angle_range_rad
@@ -97,7 +96,7 @@ class ReactiveFollowGap(Node):
                                                                             angle_min_rad=angle_min,
                                                                             angle_max_rad=angle_max,
                                                                             angle_increment_rad=angle_increment,
-                                                                            ranges_m=fake_ranges)
+                                                                            num_ranges=num_ranges)
 
     def __get_local_parameter(self, param_name: str) -> Any:
         """Function to get the value of a parameter from the parameter
@@ -187,6 +186,71 @@ class ReactiveFollowGap(Node):
     # determine which state we go into next--not what action we take here and
     # now!
 
+    def __side_too_close(self,
+                         ranges: List[float],
+                         side_indices: List[int],
+                         minimum_distance_m: float) -> bool:
+        """Checks whether the robot is too close to an obstacle on the side
+        whose range indices are provided.
+
+        Args:
+            ranges (List[float]): Array of range values from the LaserScan.
+            side_indices (List[int]): List of indices that make up the
+            the angles on the desired side of the vehicle. These will be
+            obtained externally.
+            minimum_distance_m (float): The minimum distance the robot must be
+            from from the side provided (the side the indices correspond to).
+
+        Returns:
+            bool: True if any of the ranges fall below the minimum side distance
+            threshold, False if not.
+        """
+        for index in side_indices:
+            if ranges[index] < minimum_distance_m:
+                return True
+        return False
+
+    def __right_side_too_close(self, 
+                               ranges: List[float], 
+                               right_side_indices: List[int],
+                               minimum_distance_m: float) -> bool:
+        """Checks whether the robot is too close to an obstacle on its right
+        side.
+
+        Args:
+            ranges (List[float]): Array of range values from the LaserScan.
+            right_side_indices (List[int]): List of indices that make up the
+            the angles on the "right side" of the robot.
+            minimum_distance_m (float): The minimum distance the robot must be
+            from the right side.
+
+        Returns:
+            bool: True if any of the ranges fall below the minimum side distance
+            threshold, False if not.
+        """
+        for index in right_side_indices:
+            if ranges[]
+
+    def __left_side_too_close(self, 
+                              ranges: List[float], 
+                              right_side_indices: List[int], 
+                              minimum_distance_m: float) -> bool:
+        """Checks whether the robot is too close to an obstacle on its left
+        side.
+
+        Args:
+            ranges (List[float]): Array of range values from the LaserScan.
+            left_side_indices (List[int]): List of indices that make up the
+            the angles on the "left side" of the robot.
+            minimum_distance_m (float): The minimum distance the robot must be
+            from the left side.
+
+        Returns:
+            bool: True if any of the ranges fall below the minimum side distance
+            threshold, False if not.
+        """
+
+
     def __side_too_close(self, laser_scan: LaserScan) -> bool:
         """Checks whether the robot is too close to an obstacle or wall on
         either side. Takes the ranges on its side and compares them against a
@@ -222,6 +286,11 @@ class ReactiveFollowGap(Node):
         # whether we're already steering at that angle or not. UNLESS there's
         # some advantage to just letting the algorithm handling it at that
         # point.
+
+        # Actually, setting steering to 0 whether we're already turning or not
+        # could actually result in this thing continuing forward until it has
+        # completely cleared the corner--but could be dangerous as it may collid
+        # with the wall or obstacle beforehand. So maybe do need that check.
         return False
 
     def __steer_straight(self):
@@ -231,8 +300,8 @@ class ReactiveFollowGap(Node):
         new_steering_angle = 0.0
         new_speed = self.__last_drive_message.drive.speed
         self.publish_control(new_steering_angle=new_steering_angle, new_velocity=new_speed)
-
-    def preprocess_lidar(self, ranges):
+    
+    def __preprocess_ranges(self, ranges: List[float]) -> None:
         """ Preprocess the LiDAR scan array. Expert implementation includes:
             1.Setting each value to the mean over some window
             2.Rejecting high values (eg. > 3m)
@@ -256,7 +325,8 @@ class ReactiveFollowGap(Node):
         """ Process each LiDAR scan as per the Follow Gap algorithm & publish an
         AckermannDriveStamped Message.
         """
-        ranges = laser_scan.ranges
+        ranges: List[float] = laser_scan.ranges
+
         proc_ranges = self.preprocess_lidar(ranges)
         
         # TODO:
@@ -325,6 +395,8 @@ class ReactiveFollowGap(Node):
         # gaps found after adjusting based on disparities. Use one or multiple
         # helper functions to implement this.
 
+        # First, need to preprocess the ranges we receive.
+
         # 1. Take middle range and look for indices where disparities occur?
         # 2. For each of those disparities, based on the "direction" of the
         #    disparity, within the middle ranges array, take the shorter range
@@ -332,7 +404,7 @@ class ReactiveFollowGap(Node):
         #    indices, where n is computed based on the number of angles needed
         #    to "produce" the 1/2width of the car at that shorter range
         #    (circumference calculation).
-
+        processed_ranges = self.__preprocess_ranges(ranges=ranges)
 
 
 def main(args=None):
