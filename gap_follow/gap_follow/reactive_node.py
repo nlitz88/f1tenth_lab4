@@ -70,8 +70,9 @@ class ReactiveFollowGap(Node):
         angle_max = self.__get_local_parameter("lidar_angle_max_rad")
         num_ranges = self.__get_local_parameter("lidar_num_ranges")
         fake_ranges = [0 for _ in range(num_ranges)]
-
-        self.__left_start_angle_rad = math.radians(self.__get_local_parameter("gap_scan_angle_range_deg"))
+        gap_scan_angle_range_rad = math.radians(self.__get_local_parameter("gap_scan_angle_range_deg"))
+        # Get lower left side index range.
+        self.__left_start_angle_rad = gap_scan_angle_range_rad
         self.__left_end_angle_rad = self.__get_local_parameter("lidar_angle_max_rad")
         self.__left_side_index_range: IndexRange = get_index_range_from_angles(start_angle_rad=self.__left_start_angle_rad,
                                                                                end_angle_rad=self.__left_end_angle_rad,
@@ -79,15 +80,24 @@ class ReactiveFollowGap(Node):
                                                                                angle_max=angle_max,
                                                                                angle_increment_rad=angle_increment,
                                                                                ranges_m=fake_ranges)
-        
+        # Get lower right side index range.
         self.__right_start_angle_rad = self.__get_local_parameter("lidar_angle_min_rad")
-        self.__right_end_angle_rad = -math.degrees(self.__get_local_parameter("gap_scan_angle_range_deg"))
+        self.__right_end_angle_rad = -gap_scan_angle_range_rad
         self.__right_side_index_range: IndexRange = get_index_range_from_angles(start_angle_rad=self.__right_start_angle_rad,
                                                                                 end_angle_rad=self.__right_end_angle_rad,
                                                                                 angle_min_rad=angle_min,
                                                                                 angle_max=angle_max,
                                                                                 angle_increment_rad=angle_increment,
                                                                                 ranges_m=fake_ranges)
+        # Get the (main) middle index range.
+        self.__middle_start_angle_rad = -gap_scan_angle_range_rad
+        self.__middle_end_angle_rad = gap_scan_angle_range_rad
+        self.__middle_index_range: IndexRange = get_index_range_from_angles(start_angle_rad=self.__middle_start_angle_rad,
+                                                                            end_angle_rad=self.__middle_end_angle_rad,
+                                                                            angle_min_rad=angle_min,
+                                                                            angle_max_rad=angle_max,
+                                                                            angle_increment_rad=angle_increment,
+                                                                            ranges_m=fake_ranges)
 
     def __get_local_parameter(self, param_name: str) -> Any:
         """Function to get the value of a parameter from the parameter
