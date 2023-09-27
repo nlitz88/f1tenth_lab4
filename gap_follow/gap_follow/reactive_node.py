@@ -104,6 +104,11 @@ class ReactiveFollowGap(Node):
                                                                             angle_max_rad=angle_max,
                                                                             angle_increment_rad=angle_increment,
                                                                             num_ranges=num_ranges)
+        # NOTE: If I don't want to have to deal with any rounding issues here,
+        # could really just set the middle index range to +1 from the last of
+        # the left, and -1 from the first of the right. I.e., like:
+        # self.__middle_index_range = IndexRange(starting_index=self.__right_side_index_range.ending_index,
+        #                                        ending_index=self.__left_side_index_range.starting_index)
         
         # State Variable.
         self.__current_state = FollowGapState.INIT
