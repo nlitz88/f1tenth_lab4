@@ -44,7 +44,8 @@ class TestExtendRangeValueLeft(unittest.TestCase):
         ranges = [1.0, 2.0, 3.0, 4.0, 5.0]
         starting_index = 2
         spaces_to_extend = 2
-        extend_range_value_left(ranges, starting_index, spaces_to_extend)
+        range_indices = list(range(len(ranges)))
+        extend_range_value_left(ranges=ranges, range_indices=range_indices, starting_index=starting_index, spaces_to_extend=spaces_to_extend)
         self.assertEqual(ranges, [3.0, 3.0, 3.0, 4.0, 5.0])
 
     def test_extend_left_with_clipping(self):
@@ -53,7 +54,8 @@ class TestExtendRangeValueLeft(unittest.TestCase):
         ranges = [1.0, 2.0, 3.0, 4.0, 5.0]
         starting_index = 1
         spaces_to_extend = 2
-        extend_range_value_left(ranges, starting_index, spaces_to_extend)
+        range_indices = list(range(len(ranges)))
+        extend_range_value_left(ranges=ranges, range_indices=range_indices, starting_index=starting_index, spaces_to_extend=spaces_to_extend)
         self.assertEqual(ranges, [2.0, 2.0, 3.0, 4.0, 5.0])
     
     def test_extend_left_with_more_clipping(self):
@@ -62,7 +64,8 @@ class TestExtendRangeValueLeft(unittest.TestCase):
         ranges = [1.0, 2.0, 3.0, 4.0, 5.0]
         starting_index = 0
         spaces_to_extend = 12
-        extend_range_value_left(ranges, starting_index, spaces_to_extend)
+        range_indices = list(range(len(ranges)))
+        extend_range_value_left(ranges=ranges, range_indices=range_indices, starting_index=starting_index, spaces_to_extend=spaces_to_extend)
         self.assertEqual(ranges, [1.0, 2.0, 3.0, 4.0, 5.0])
 
     def test_extend_full_length(self):
@@ -71,7 +74,8 @@ class TestExtendRangeValueLeft(unittest.TestCase):
         ranges = [1.0, 2.0, 3.0, 4.0, 5.0]
         starting_index = 4
         spaces_to_extend = 4
-        extend_range_value_left(ranges, starting_index, spaces_to_extend)
+        range_indices = list(range(len(ranges)))
+        extend_range_value_left(ranges=ranges, range_indices=range_indices, starting_index=starting_index, spaces_to_extend=spaces_to_extend)
         self.assertEqual(ranges, [5.0, 5.0, 5.0, 5.0, 5.0])
 
     def test_extend_partial_length(self):
@@ -80,7 +84,8 @@ class TestExtendRangeValueLeft(unittest.TestCase):
         ranges = [1.0, 2.0, 3.0, 4.0, 5.0]
         starting_index = 4
         spaces_to_extend = 2
-        extend_range_value_left(ranges, starting_index, spaces_to_extend)
+        range_indices = list(range(len(ranges)))
+        extend_range_value_left(ranges=ranges, range_indices=range_indices, starting_index=starting_index, spaces_to_extend=spaces_to_extend)
         self.assertEqual(ranges, [1.0, 2.0, 5.0, 5.0, 5.0])
 
     def test_extend_zero_length(self):
@@ -89,7 +94,8 @@ class TestExtendRangeValueLeft(unittest.TestCase):
         ranges = [1.0, 2.0, 3.0, 4.0, 5.0]
         starting_index = 3
         spaces_to_extend = 0
-        extend_range_value_left(ranges, starting_index, spaces_to_extend)
+        range_indices = list(range(len(ranges)))
+        extend_range_value_left(ranges=ranges, range_indices=range_indices, starting_index=starting_index, spaces_to_extend=spaces_to_extend)
         self.assertEqual(ranges, [1.0, 2.0, 3.0, 4.0, 5.0])
 
     def test_extend_negative_spaces(self):
@@ -97,8 +103,9 @@ class TestExtendRangeValueLeft(unittest.TestCase):
         ranges = [1.0, 2.0, 3.0, 4.0, 5.0]
         starting_index = 1
         spaces_to_extend = -3 # Negative number of spaces_to_extend.
+        range_indices = list(range(len(ranges)))
         with self.assertRaises(Exception) as context:
-            extend_range_value_left(ranges, starting_index, spaces_to_extend)
+            extend_range_value_left(ranges=ranges, range_indices=range_indices, starting_index=starting_index, spaces_to_extend=spaces_to_extend)
         self.assertTrue("is negative" in str(context.exception))
 
     def test_out_of_bounds_exception(self):
@@ -106,9 +113,21 @@ class TestExtendRangeValueLeft(unittest.TestCase):
         ranges = [1.0, 2.0, 3.0, 4.0, 5.0]
         starting_index = 10  # Out of bounds index
         spaces_to_extend = 2
+        range_indices = list(range(len(ranges)))
         with self.assertRaises(Exception) as context:
-            extend_range_value_left(ranges, starting_index, spaces_to_extend)
+            extend_range_value_left(ranges=ranges, range_indices=range_indices, starting_index=starting_index, spaces_to_extend=spaces_to_extend)
         self.assertTrue("out of bounds" in str(context.exception))
+
+    def test_extend_left_in_bounds_3(self):
+        # Test case 8: Testing functionality whenever we're working in only a
+        # subset of the values of ranges.
+        ranges = [1.0, 2.0, 3.0, 4.0, 5.0, 4.0, 2.3, 1.9, 3.4, 9.7, 2.3]
+        starting_index = 6
+        spaces_to_extend = 2
+        range_indices = [2,3,4,5,6,7,8]
+        extend_range_value_right(ranges=ranges, range_indices=range_indices, starting_index=starting_index, spaces_to_extend=spaces_to_extend)
+        expected_result = [1.0, 2.0, 3.0, 4.0, 2.3, 2.3, 2.3, 1.9, 3.4, 9.7, 2.3]
+        self.assertEqual(ranges, expected_result)
 
 class TestExtendRangeValueRight(unittest.TestCase):
 
