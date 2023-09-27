@@ -58,11 +58,11 @@ def get_arclength_index_count(radius_m: float,
     # computed theta, get the index that corresponds to the resulting angle, and
     # then return an IndexRange from the start_index to the end_index just
     # computed.
+    start_index = 0
     start_angle_rad = get_angle_from_index(index=start_index, 
                                        angle_increment_rad=angle_increment_rad, 
                                        angle_min_rad=angle_min_rad)
     end_angle_rad = start_angle_rad + theta_rad
-    start_index = 0
     end_index = get_index_from_angle(angle_rad=end_angle_rad,
                                      angle_min_rad=angle_min_rad,
                                      angle_max_rad=angle_max_rad,
@@ -135,12 +135,21 @@ def get_disparity(a: float, b: float, disparity_threshold_m: float) -> Disparity
     # just in case.
     return DisparityDirection.NO_DISPARITY
 
-def extend_range_value(ranges: List[float],
-                       starting_index: int, 
-                       spaces_to_extend: int, 
-                       direction: DisparityDirection) -> None:
+def extend_range_value_right(ranges: List[float],
+                             starting_index: int, 
+                             spaces_to_extend: int) -> None:
     
-    # 
+    extension_value = ranges[starting_index]
+    for offset in range(1, spaces_to_extend, __step=1):
+        ranges[starting_index + offset] = extension_value
+        pass
+    pass
+
+def extend_range_value_left(ranges: List[float],
+                            starting_index: int, 
+                            spaces_to_extend: int) -> None:
+    
+    # Based on the provided direction, 
     
     pass
 
@@ -179,20 +188,36 @@ def pad_disparities(ranges: List[float],
             # Compute the number of indices/spaces to extend based on the
             # car width and the range (==depth==distance) the shorter value
             # that disparity occurs at.
-            num_extend_indices = get_arclength_index_count(radius_m=left_range,
+            arc_length_indices = get_arclength_index_count(radius_m=left_range,
                                                            desired_arc_length_m=0.5*car_width,
                                                            angle_increment_rad=angle_increment_rad,
                                                            angle_min_rad=angle_min_rad,
                                                            angle_max_rad=angle_max_rad,
                                                            num_ranges=len(ranges))
-
-            extend_range_value(ranges=ranges, 
-                               starting_index=left,
-                               spaces_to_extend=num_extend_indices,
-                               direction=DisparityDirection.RIGHT)
-
-            # only trouble with this--figuring out which way to extend the
-            # values may not be as clean.
+            # NOTE: Do we have to subtract one from the arc length to extend by,
+            # as the arc length includes the starting index?
+            extend_range_value_right(ranges=ranges, 
+                                     starting_index=left,
+                                     spaces_to_extend=arc_length_indices - 1)
+        
+        elif disparity == DisparityDirection.LEFT:
+            
+            # Compute the number of indices/spaces to extend based on the
+            # car width and the range (==depth==distance) the shorter value
+            # that disparity occurs at.
+            arc_length_indices = get_arclength_index_count(radius_m=right_range,
+                                                           desired_arc_length_m=0.5*car_width,
+                                                           angle_increment_rad=angle_increment_rad,
+                                                           angle_min_rad=angle_min_rad,
+                                                           angle_max_rad=angle_max_rad,
+                                                           num_ranges=len(ranges))
+            # NOTE: Do we have to subtract one from the arc length to extend by,
+            # as the arc length includes the starting index?
+            extend_range_value_left(ranges=ranges,
+                                    starting_index=right,
+                                    spaces_to_extend=arc_length_indices)
+        
+        
 
 
         

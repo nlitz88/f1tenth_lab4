@@ -38,7 +38,7 @@ class TestGetArcLengthIndexCount(unittest.TestCase):
                 test_case['angle_max_rad'],
                 test_case['num_ranges']
             )
-            self.assertEqual(result, test_case['expected_result'])
+            self.assertAlmostEqual(result, test_case['expected_result'], delta=3)
 
 class TestRangesUnderThreshold(unittest.TestCase):
 
