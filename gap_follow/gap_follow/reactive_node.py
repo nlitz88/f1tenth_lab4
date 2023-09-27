@@ -2,6 +2,7 @@ import math
 from typing import List, Any
 import rclpy
 from rclpy.node import Node
+from enum import Enum
 
 import numpy as np
 from sensor_msgs.msg import LaserScan
@@ -11,6 +12,11 @@ from rcl_interfaces.msg import SetParametersResult
 from threading import Lock
 
 from lidarutils import IndexRange, get_index_range_from_angles
+
+class FollowGapState(Enum):
+    INIT = 1
+    MOVING_STRAIGHT = 2
+    DISPARITY_CONTROL = 3
 
 class ReactiveFollowGap(Node):
     """
@@ -97,6 +103,9 @@ class ReactiveFollowGap(Node):
                                                                             angle_max_rad=angle_max,
                                                                             angle_increment_rad=angle_increment,
                                                                             num_ranges=num_ranges)
+        
+        # State Variable.
+        self.__current_state = FollowGapState.INIT
 
     def __get_local_parameter(self, param_name: str) -> Any:
         """Function to get the value of a parameter from the parameter
@@ -327,7 +336,35 @@ class ReactiveFollowGap(Node):
         """
         ranges: List[float] = laser_scan.ranges
 
-        proc_ranges = self.preprocess_lidar(ranges)
+        if self.__current_state == FollowGapState.INIT:
+            # Unconditional guard used to transition into DISPARITY_CONTROL
+            # state.
+            if True:
+                self.__current_state = FollowGapState.DISPARITY_CONTROL
+
+        elif self.__current_state == FollowGapState.MOVING_STRAIGHT:
+
+
+            # Guard condition here.
+            # If side is still too close, continue moving straight.
+            if self.__side_too_close():
+                self.__current_state = FollowGapState.MOVING_STRAIGHT
+            # Otherwise, switch back to disparity control state.
+            else:
+                self.__current_state = FollowGapState.DISPARITY_CONTROL
+
+
+        elif self.__current_state == FollowGapState.DISPARITY_CONTROL:
+
+
+
+            # Guard Condition here.
+            # If side is still too close, continue moving straight.
+            if self.__side_too_close():
+                self.__current_state = FollowGapState.MOVING_STRAIGHT
+            # Otherwise, remain in disparity control state.
+            else:
+                self.__current_state = FollowGapState.DISPARITY_CONTROL
         
         # TODO:
         #Find closest point to LiDAR
@@ -396,6 +433,30 @@ class ReactiveFollowGap(Node):
         # helper functions to implement this.
 
         # First, need to preprocess the ranges we receive.
+
+        # How do I want to handle these arrays? The pythonic way would be to
+        # just have functions that use the class variables and return smaller
+        # lists that are subsets of the actual whole ranges list. That's
+        # cool--but that's not how we'd do it in C++, and doesn't seem very
+        # "robotics friendly."
+
+        # To start, we want to find the disparities--but we only want to look
+        # for them in the middle range. I.e., from -90 --> +90. How would we do
+        # this in C++?
+
+        # We wouldn't create a new array--we would just start and stop indexing
+        # from the start and stop index for the middle range.
+        
+        # Okay, so maybe the one remaining question is: where do we get those
+        # ranges? Do we grab them here and pass them into the functions here? Or
+        # do I write another function like "__disparity_control" that returns
+        # steering angle and velocity (which we then publish), and that function
+        # is the one that access those range values?
+
+        # OR, do we treat this as a sort of state-driven function, where, we
+        # first run the check for whether or not we're too close--and that
+        # produces a steering angle and velocity--or we run the disparity-based
+        # control, and that produces a steering angle and velocity. I.e., 
 
         # 1. Take middle range and look for indices where disparities occur?
         # 2. For each of those disparities, based on the "direction" of the
