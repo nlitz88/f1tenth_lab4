@@ -4,7 +4,9 @@ gap_follow node.
 
 from enum import Enum
 from typing import List
-from lidarutils import get_angle_from_index, get_index_from_angle
+
+import numpy as np
+from lidarutils import IndexRange, get_angle_from_index, get_index_from_angle
 
 # NOTE: If I can't get this arclength function to work (for whatever reason),
 # could always just re-implement a naive version of it that simply returns a
@@ -165,9 +167,26 @@ def extend_range_value_left(ranges: List[float],
         spaces_to_extend (int): The number of spaces to the left of the
         starting index to be assigned the value at the starting_index.
     """
+    # NOTE: IDENTIFIED ERROR IN THIS FUNCTION. IT WILL GO OUT OF BOUNDS!! Can I
+    # use some sort of clipping in combination with my IndexRange class to
+    # neaten this up and make it safer?
+
+    # Check if the provided starting index is out of bounds.
+    if starting_index > len(ranges) - 1 or starting_index < 0:
+        raise Exception(f"Provided starting_index == {starting_index} is out of bounds of the ranges array (length == {len(ranges)} == [0, {len(ranges)-1}]) ")
+    # If not, get the value at that index as the extension value.
     extension_value = ranges[starting_index]
-    for offset in range(-1, -spaces_to_extend - 1, __step=-1):
-        ranges[starting_index + offset] = extension_value
+    # end = np.clip(starting_index - spaces_to_extend, a_min=0, a_max=len(ranges)-1)
+    # print(f"End: {end}")
+    # indices = IndexRange(starting_index=starting_index, ending_index=end).get_indices()
+    # print(indices)
+    # for index in indices:
+    #     ranges[index] = extension_value
+    current_index = starting_index - 1
+    while current_index >= 0 and spaces_to_extend > 0:
+        ranges[current_index] = extension_value
+        current_index -= 1
+        spaces_to_extend -= 1
 
 # Function to get disparities. What should this return/do? I could have it find
 # disparities (indices whose value difference meets or exceeds the threshold),

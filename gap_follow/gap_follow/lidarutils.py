@@ -69,8 +69,8 @@ class IndexRange:
     """
 
     def __init__(self, starting_index: int, ending_index: int):
-        self.starting_index: int
-        self.ending_index: int
+        self.starting_index: int = starting_index
+        self.ending_index: int = ending_index
         # Set step for iterator based on if ending index > or < the starting
         # index.
         if starting_index < ending_index:
@@ -85,7 +85,7 @@ class IndexRange:
         Yields:
             int: Next index in the index range.
         """
-        for i in range(__start=self.starting_index, __stop=self.ending_index + 1, __step=self.__step):
+        for i in range(self.starting_index, self.ending_index + 1, self.__step):
             yield i
     
     def get_indices(self) -> List[int]:
@@ -95,7 +95,7 @@ class IndexRange:
             List[int]: All the indices between the starting and ending index,
             including the starting and ending index.
         """
-        return list(range(__start=self.starting_index, __stop=self.ending_index + 1, __step=self.__step))
+        return list(range(self.starting_index, self.ending_index + 1, self.__step))
     
 
 def get_index_range_from_angles(start_angle_rad: float,

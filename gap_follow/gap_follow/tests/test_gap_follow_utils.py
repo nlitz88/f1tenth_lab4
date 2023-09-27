@@ -40,6 +40,34 @@ class TestGetArcLengthIndexCount(unittest.TestCase):
             )
             self.assertAlmostEqual(result, test_case['expected_result'], delta=3)
 
+class TestExtendRangeValueLeft(unittest.TestCase):
+
+    def test_extend_left_in_bounds(self):
+        # Test case 1: Extending to the left within the bounds of the list
+        ranges = [1.0, 2.0, 3.0, 4.0, 5.0]
+        starting_index = 2
+        spaces_to_extend = 2
+        extend_range_value_left(ranges, starting_index, spaces_to_extend)
+        self.assertEqual(ranges, [3.0, 3.0, 3.0, 4.0, 5.0])
+
+    def test_extend_left_with_clipping(self):
+        # Test case 2: Requesting an extension that would step past the start of
+        # the array.
+        ranges = [1.0, 2.0, 3.0, 4.0, 5.0]
+        starting_index = 1
+        spaces_to_extend = 2
+        extend_range_value_left(ranges, starting_index, spaces_to_extend)
+        self.assertEqual(ranges, [2.0, 2.0, 3.0, 4.0, 5.0])
+
+    def test_out_of_bounds_exception(self):
+        # Test case 2: Ensure out-of-bounds exception is raised
+        ranges = [1.0, 2.0, 3.0, 4.0, 5.0]
+        starting_index = 10  # Out of bounds index
+        spaces_to_extend = 2
+        with self.assertRaises(Exception) as context:
+            extend_range_value_left(ranges, starting_index, spaces_to_extend)
+        self.assertTrue("out of bounds" in str(context.exception))
+
 class TestRangesUnderThreshold(unittest.TestCase):
 
     def setUp(self):
