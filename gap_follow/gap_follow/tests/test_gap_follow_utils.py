@@ -2,43 +2,40 @@
 import unittest
 from gap_follow_utils import *
 
-class TestGetArcLengthIndexCount(unittest.TestCase):
+class TestNumRangesInArcLength(unittest.TestCase):
+    
+    def test_short_distance(self):
+        # Test with short distance from the car to the obstacle.
+        distance_m = 0.5
+        desired_arc_length_m = 0.1016
+        angle_increment_rad = 0.004351851996034384
+        expected_result = 47
+        result = num_ranges_in_arclength(arc_length_m=desired_arc_length_m,
+                                         arc_radius_m=distance_m,
+                                         angle_increment_rad=angle_increment_rad)
+        self.assertAlmostEqual(result, expected_result, delta=1)
 
-    def test_get_arclength_index_count(self):
-        # Define your test cases
-        test_cases = [
-            {
-                'radius_m': 1.0,
-                'desired_arc_length_m': 3.14159265359,  # Half circumference of radius 1.0
-                'angle_increment_rad': 0.01,
-                'angle_min_rad': 0.0,
-                'angle_max_rad': 6.28318530718,  # 2 * pi
-                'num_ranges': 629,  # Approximately 2 * pi / 0.01
-                'expected_result': 316,  # Half of 629
-            },
-            {
-                'radius_m': 2.0,
-                'desired_arc_length_m': 6.28318530718,  # Full circumference of radius 2.0
-                'angle_increment_rad': 0.01,
-                'angle_min_rad': 0.0,
-                'angle_max_rad': 6.28318530718,  # 2 * pi
-                'num_ranges': 629,  # Approximately 2 * pi / 0.01
-                'expected_result': 629,  # Same as num_ranges
-            },
-            # Add more test cases here
-        ]
+    def test_medium_distance(self):
+        # Test with medium distance from the car to the obstacle.
+        distance_m = 2.0
+        desired_arc_length_m = 0.1016
+        angle_increment_rad = 0.004351851996034384
+        expected_result = 12
+        result = num_ranges_in_arclength(arc_length_m=desired_arc_length_m,
+                                         arc_radius_m=distance_m,
+                                         angle_increment_rad=angle_increment_rad)
+        self.assertAlmostEqual(result, expected_result, delta=1)
 
-        # Run the test cases
-        for test_case in test_cases:
-            result = get_arclength_index_count(
-                test_case['radius_m'],
-                test_case['desired_arc_length_m'],
-                test_case['angle_increment_rad'],
-                test_case['angle_min_rad'],
-                test_case['angle_max_rad'],
-                test_case['num_ranges']
-            )
-            self.assertAlmostEqual(result, test_case['expected_result'], delta=3)
+    def test_long_distance(self):
+        # Test with medium distance from the car to the obstacle.
+        distance_m = 4.0
+        desired_arc_length_m = 0.1016
+        angle_increment_rad = 0.004351851996034384
+        expected_result = 6
+        result = num_ranges_in_arclength(arc_length_m=desired_arc_length_m,
+                                         arc_radius_m=distance_m,
+                                         angle_increment_rad=angle_increment_rad)
+        self.assertAlmostEqual(result, expected_result, delta=1)
 
 class TestExtendRangeValueLeft(unittest.TestCase):
 

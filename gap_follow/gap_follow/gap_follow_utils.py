@@ -3,74 +3,29 @@ gap_follow node.
 """
 
 from enum import Enum
+import math
 from typing import List
 
-import numpy as np
-from lidarutils import IndexRange, get_angle_from_index, get_index_from_angle
-
-# NOTE: If I can't get this arclength function to work (for whatever reason),
-# could always just re-implement a naive version of it that simply returns a
-# fixed value, like something we could parameterize. In fact, I could probably
-# try to test the whole pipeline first with a fixed number--that could work too. 
-
-# Generally speaking, need a function that, given the desired circumference
-# covered (at a particular given range == radius), should return the indices of
-# the angles that go from the starting index to the index of the last angle
-# needed to create that circumference.
-def get_arclength_index_count(radius_m: float,
-                              desired_arc_length_m: float,
-                              angle_increment_rad: float,
-                              angle_min_rad: float,
-                              angle_max_rad: float,
-                              num_ranges: int) -> int:
-    """Returns the number of indices in the ranges (number of ranges) would be
-    needed to create a curve with the desired arc length at the provided radius.
+def num_ranges_in_arclength(arc_length_m: float,
+                            arc_radius_m: float,
+                            angle_increment_rad: float) -> int:
+    """Returns the number of range needed to comprise a an arc with the
+    specified arc length at the specified arc radius.
 
     Args:
-        start_index (int): The starting index 
-        radius_m (float): The range or radius that the arc would be at.
-        desired_arc_length_m (float): Desired length of arc to be formed.
-        angle_increment_rad (float): Angle increment )in radians) between each
-        LiDAR range value.
-        angle_min_rad (float): The minimum (smallest) angle measured by the
-        LiDAR from the scan at hand.
-        angle_max_rad (float): The maximum (most positive) angle measured by the
-        LiDAR from the scan at hand.
-        num_ranges (int): The length of the ranges array from the LaserScan
-        message. I.e., the number of range measurements.
+        arc_length_m (float): The length of the arc (in meters).
+        arc_radius_m (float): The radius/range (in meters) that the arc is
+        formed at from as measured from the car.
+        angle_increment_rad (float): The increment (in radians) that separates
+        each of the range values within the ranges array.
 
     Returns:
-        int: The number of indices == number of range values from the range
-        array that, if plotted, would form an arc of approximately the desired
-        length. Could also call this the arc length expressed as the number of
-        consecutive range values that create that arc.
+        int: The number of range values that comprise the arc at the given
+        distance/radius/range.
     """
-
-    # To compute this, we basically just need to compute what the theta of the
-    # curve must be in order to create the desired arclength with at the with
-    # the provided radius. If arc_length = r*theta, then we just have to compute
-    # theta  = arc_length/radius.
-    theta_rad = desired_arc_length_m/radius_m
-    # NOTE: Arc length should be padded a little bit, as the arc length doesn't
-    # strictly correspond to the width of the gap. That's the side that goes
-    # from point to point under the arc. Could compute this if need be, but
-    # we'll see if a rough approximation works first.
-
-    # Then, get the angle that corresponds to the provided index, add the
-    # computed theta, get the index that corresponds to the resulting angle, and
-    # then return an IndexRange from the start_index to the end_index just
-    # computed.
-    start_index = 0
-    start_angle_rad = get_angle_from_index(index=start_index, 
-                                       angle_increment_rad=angle_increment_rad, 
-                                       angle_min_rad=angle_min_rad)
-    end_angle_rad = start_angle_rad + theta_rad
-    end_index = get_index_from_angle(angle_rad=end_angle_rad,
-                                     angle_min_rad=angle_min_rad,
-                                     angle_max_rad=angle_max_rad,
-                                     angle_increment_rad=angle_increment_rad,
-                                     num_ranges=num_ranges)
-    return int(end_index - start_index + 1)
+    arc_angle_rad = arc_length_m/arc_radius_m
+    num_ranges = math.ceil(arc_angle_rad / angle_increment_rad)
+    return num_ranges
 
 def ranges_under_threshold(ranges: List[float],
                            range_indices: List[int],
@@ -248,14 +203,15 @@ def pad_disparities(ranges: List[float],
             # Compute the number of indices/spaces to extend based on the
             # car width and the range (==depth==distance) the shorter value
             # that disparity occurs at.
-            arc_length_indices = get_arclength_index_count(radius_m=left_range,
-                                                           desired_arc_length_m=0.5*car_width_m,
-                                                           angle_increment_rad=angle_increment_rad,
-                                                           angle_min_rad=angle_min_rad,
-                                                           angle_max_rad=angle_max_rad,
-                                                           num_ranges=len(ranges))
-            # NOTE: Do we have to subtract one from the arc length to extend by,
-            # as the arc length includes the starting index?
+            num_arc_length_indices = get_arclength_index_count(radius_m=left_range,
+                                                              desired_arc_length_m=0.5*car_width_m,
+                                                              angle_increment_rad=angle_increment_rad,
+                                                              angle_min_rad=angle_min_rad,
+                                                              angle_max_rad=angle_max_rad,
+                                                              num_ranges=len(ranges))
+            # The number of indices returned is the total number of indices
+            # needed to create that arc. Therefore, only extend by num - 1, as
+            # there is already a value at the starting_index.
             extend_range_value_right(ranges=ranges, 
                                      starting_index=left,
                                      spaces_to_extend=arc_length_indices - 1)
@@ -275,7 +231,7 @@ def pad_disparities(ranges: List[float],
             # as the arc length includes the starting index?
             extend_range_value_left(ranges=ranges,
                                     starting_index=right,
-                                    spaces_to_extend=arc_length_indices)
+                                    spaces_to_extend=arc_length_indices - 1)
         
 
 

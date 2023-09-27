@@ -59,8 +59,8 @@ class ReactiveFollowGap(Node):
                                                        qos_profile=10)
         
         # Variable for robot width.
-        self.__robot_width = 0.1016
-        self.__robot_width_mutex = Lock()
+        self.__car_width_m = 0.2032
+        self.__car_width_mutex = Lock()
 
         # Store last drive message.
         self.__last_drive_message = AckermannDriveStamped()
@@ -153,9 +153,9 @@ class ReactiveFollowGap(Node):
         """
         # TODO: For now, I'm going to forgo implementing this, as there aren't
         # any messages being published to the /ego_racecar_description topic
-        with self.__robot_width_mutex:
+        with self.__car_width_mutex:
             # Grab the robot width from the description here.
-            # self.__robot_width = robot_description
+            # self.__car_width_m = robot_description
             pass
 
     def get_robot_width(self) -> float:
@@ -164,8 +164,8 @@ class ReactiveFollowGap(Node):
         Returns:
             float: Robot width in meters.
         """
-        with self.__robot_width_mutex:
-            return self.__robot_width
+        with self.__car_width_mutex:
+            return self.__car_width_m
         
     def publish_control(self, 
                         new_steering_angle: float, 
