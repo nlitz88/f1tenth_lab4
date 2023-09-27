@@ -339,11 +339,22 @@ class TestPadDisparities(unittest.TestCase):
                         car_width_m=car_width_m,
                         angle_increment_rad=angle_increment_rad)
         expected_result = [1.1, 1.2, 1.0, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 2.4, 2.4, 2.3, 2.6, 2.5, 2.4, 2.4, 2.3, 2.6, 2.5, 2.4, 2.4, 2.3, 2.6, 2.5]
-        
-        print("Modified ranges:")
-        print(ranges)
-        print("Expected ranges:")
-        print(expected_result)
+        self.assertEqual(ranges, expected_result)
+    
+    def test_pad_single_left_disparity(self):
+
+        ranges = [1.5, 1.5, 1.5, 1.4, 1.5, 1.6, 1.7, 1.5, 1.5, 0.8, 0.75, 0.7, 0.65, 0.5, 0.55, 0.45, 0.45, 0.45, 0.45, 0.45, 0.55, 0.45, 0.45, 0.45, 0.45, 0.45, 0.55, 0.45, 0.45, 0.45, 0.45, 0.45, 0.55, 0.45, 0.45, 0.45, 0.45, 0.45]
+        angle_increment_rad = 0.004351851996034384
+        disparity_threshold_m = 0.3
+        car_width_m = 0.2032
+        # List of disparities from above ranges array.
+        disparities = [Disparity(left_index=8, right_index=9, direction=DisparityDirection.LEFT)]
+        pad_disparities(ranges=ranges,
+                        range_indices=[5,38],
+                        disparities=disparities,
+                        car_width_m=car_width_m,
+                        angle_increment_rad=angle_increment_rad)
+        expected_result = [1.5, 1.5, 1.5, 1.4, 1.5, 0.8, 0.8, 0.8, 0.8, 0.8, 0.75, 0.7, 0.65, 0.5, 0.55, 0.45, 0.45, 0.45, 0.45, 0.45, 0.55, 0.45, 0.45, 0.45, 0.45, 0.45, 0.55, 0.45, 0.45, 0.45, 0.45, 0.45, 0.55, 0.45, 0.45, 0.45, 0.45, 0.45]
         self.assertEqual(ranges, expected_result)
     
     # def test_pad_single_left_disparity(self):
