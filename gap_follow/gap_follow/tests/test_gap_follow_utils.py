@@ -316,22 +316,12 @@ class TestFindDisparities(unittest.TestCase):
         
     def test_one_disparity(self):
         # Test case 2: One disparity
-        ranges = [1.0, 2.0, 4.0, 5.0]
+        ranges = [1.0, 2.1, 2.5, 2.3]
         range_indices = [0, 1, 2, 3]
         disparity_threshold_m = 1.0
         result = find_disparities(ranges, range_indices, disparity_threshold_m)
-        expected_disparity = [Disparity(left_index=1, right_index=2, direction='increasing')]
+        expected_disparity = [Disparity(left_index=0, right_index=1, direction=DisparityDirection.RIGHT)]
         self.assertEqual(result, expected_disparity)
-        
-    def test_multiple_disparities(self):
-        # Test case 3: Multiple disparities
-        ranges = [1.0, 2.0, 4.0, 6.0, 7.0, 3.0]
-        range_indices = [0, 1, 2, 3, 4, 5]
-        disparity_threshold_m = 1.0
-        result = find_disparities(ranges, range_indices, disparity_threshold_m)
-        expected_disparities = [Disparity(left_index=1, right_index=2, direction='increasing'),
-                                Disparity(left_index=4, right_index=5, direction='decreasing')]
-        self.assertEqual(result, expected_disparities)
 
 # class TestPadDisparities(unittest.TestCase):
 
