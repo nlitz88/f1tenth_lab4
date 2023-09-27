@@ -164,11 +164,17 @@ def clip_range_values(ranges: List[float],
                       min: float,
                       max: float) -> None:
     """clips each value in the provided ranges array between the provided
-    minimum and maximum.
+    minimum and maximum. Note that this is an IN-PLACE operation. That is, the
+    ranges list provided will be modified.
 
     Args:
         ranges (List[float]): List of range values from LaserScan.
         min (float): Minimum value that ranges below that value will get set to.
         max (float): Maximum value that ranges above that value will get set to.
     """
-    return list(np.clip(a=ranges, a_min=min, a_max=max))
+    for i in range(len(ranges)):
+        if ranges[i] < min:
+            ranges[i] = min
+        elif ranges[i] > max:
+            ranges[i] = max
+    return
