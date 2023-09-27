@@ -2,6 +2,44 @@
 import unittest
 from gap_follow_utils import *
 
+class TestGetArcLengthIndexCount(unittest.TestCase):
+
+    def test_get_arclength_index_count(self):
+        # Define your test cases
+        test_cases = [
+            {
+                'radius_m': 1.0,
+                'desired_arc_length_m': 3.14159265359,  # Half circumference of radius 1.0
+                'angle_increment_rad': 0.01,
+                'angle_min_rad': 0.0,
+                'angle_max_rad': 6.28318530718,  # 2 * pi
+                'num_ranges': 629,  # Approximately 2 * pi / 0.01
+                'expected_result': 316,  # Half of 629
+            },
+            {
+                'radius_m': 2.0,
+                'desired_arc_length_m': 6.28318530718,  # Full circumference of radius 2.0
+                'angle_increment_rad': 0.01,
+                'angle_min_rad': 0.0,
+                'angle_max_rad': 6.28318530718,  # 2 * pi
+                'num_ranges': 629,  # Approximately 2 * pi / 0.01
+                'expected_result': 629,  # Same as num_ranges
+            },
+            # Add more test cases here
+        ]
+
+        # Run the test cases
+        for test_case in test_cases:
+            result = get_arclength_index_count(
+                test_case['radius_m'],
+                test_case['desired_arc_length_m'],
+                test_case['angle_increment_rad'],
+                test_case['angle_min_rad'],
+                test_case['angle_max_rad'],
+                test_case['num_ranges']
+            )
+            self.assertEqual(result, test_case['expected_result'])
+
 class TestRangesUnderThreshold(unittest.TestCase):
 
     def setUp(self):
@@ -26,39 +64,22 @@ class TestRangesUnderThreshold(unittest.TestCase):
         result = ranges_under_threshold(self.ranges, self.range_indices, self.minimum_distance_m)
         self.assertFalse(result)
 
-class TestIsDisparity(unittest.TestCase):
+class TestGetDisparityFunction(unittest.TestCase):
+    def test_no_disparity(self):
+        result = get_disparity(1.0, 1.0, 0.5)
+        self.assertEqual(result, DisparityDirection.NO_DISPARITY)
 
-    def test_disparity_true(self):
-        # Test when the difference between a and b exceeds the disparity threshold
-        a = 5.0
-        b = 8.0
-        disparity_threshold = 2.0
-        result = is_disparity(a, b, disparity_threshold)
-        self.assertTrue(result)
+    def test_right_disparity(self):
+        result = get_disparity(2.0, 8.0, 5.0)
+        self.assertEqual(result, DisparityDirection.RIGHT)
 
-    def test_disparity_false(self):
-        # Test when the difference between a and b does not exceed the disparity threshold
-        a = 5.0
-        b = 5.5
-        disparity_threshold = 1.0
-        result = is_disparity(a, b, disparity_threshold)
-        self.assertFalse(result)
+    def test_left_disparity(self):
+        result = get_disparity(8.0, 2.0, 5.0)
+        self.assertEqual(result, DisparityDirection.LEFT)
 
-    def test_disparity_equal_values(self):
-        # Test when a and b are equal, they should not be considered a disparity
-        a = 3.0
-        b = 3.0
-        disparity_threshold = 1.0
-        result = is_disparity(a, b, disparity_threshold)
-        self.assertFalse(result)
-
-    def test_disparity_zero_threshold(self):
-        # Test when the disparity threshold is set to zero, any difference should be considered a disparity
-        a = 5.0
-        b = 6.0
-        disparity_threshold = 0.0
-        result = is_disparity(a, b, disparity_threshold)
-        self.assertTrue(result)
+    def test_default_case(self):
+        result = get_disparity(5.0, 5.0, 0.5)
+        self.assertEqual(result, DisparityDirection.NO_DISPARITY)
 
 class TestGetDisparity(unittest.TestCase):
 
