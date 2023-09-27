@@ -202,7 +202,7 @@ def find_disparities(ranges: List[float],
     # or not each pair is a disparity or not. If it is, add it to the below list
     # of Disparity objects.
     disparities = []
-    for left in range(start_index, stop_index - 2):
+    for left in range(start_index, stop_index):
         right = left + 1
 
         left_range = ranges[left]
