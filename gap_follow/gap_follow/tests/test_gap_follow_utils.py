@@ -323,48 +323,47 @@ class TestFindDisparities(unittest.TestCase):
         expected_disparity = [Disparity(left_index=0, right_index=1, direction=DisparityDirection.RIGHT)]
         self.assertEqual(result, expected_disparity)
 
-# class TestPadDisparities(unittest.TestCase):
+class TestPadDisparities(unittest.TestCase):
 
-#     def test_pad_single_right_disparity(self):
+    def test_pad_single_right_disparity(self):
 
-#         ranges = [1.1, 1.2, 1.0, 1.1, 2.3, 2.5, 2.4, 2.4, 2.3, 2.6, 2.5, 2.4, 2.4, 2.3, 2.6, 2.5, 2.4, 2.4, 2.3, 2.6, 2.5, 2.4, 2.4, 2.3, 2.6, 2.5, 2.4, 2.4, 2.3, 2.6, 2.5, 2.4, 2.4, 2.3, 2.6, 2.5, 2.4, 2.4, 2.3, 2.6, 2.5]
-#         angle_increment_rad = 0.004351851996034384
-#         disparity_threshold_m = 0.3
-#         car_width_m = 0.2032
-#         pad_disparities(ranges=ranges,
-#                         angle_increment_rad=angle_increment_rad,
-#                         range_indices=[0,len(ranges)-1],
-#                         disparity_threshold_m=disparity_threshold_m,
-#                         car_width_m=car_width_m)
-#         pad_disparities(ranges=ranges,
-#                         range_indices=[1,28],
-#                         disparities=)
-#         expected_result = [1.1, 1.2, 1.0, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 2.4, 2.3, 2.6, 2.5, 2.4, 2.4, 2.3, 2.6, 2.5, 2.4, 2.4, 2.3, 2.6, 2.5]
+        ranges = [1.1, 1.2, 1.0, 1.1, 2.3, 2.5, 2.4, 2.4, 2.3, 2.6, 2.5, 2.4, 2.4, 2.3, 2.6, 2.5, 2.4, 2.4, 2.3, 2.6, 2.5, 2.4, 2.4, 2.3, 2.6, 2.5, 2.4, 2.4, 2.3, 2.6, 2.5, 2.4, 2.4, 2.3, 2.6, 2.5, 2.4, 2.4, 2.3, 2.6, 2.5]
+        angle_increment_rad = 0.004351851996034384
+        disparity_threshold_m = 0.3
+        car_width_m = 0.2032
+        # List of disparities from above ranges array.
+        disparities = [Disparity(left_index=3, right_index=4, direction=DisparityDirection.RIGHT)]
+        pad_disparities(ranges=ranges,
+                        range_indices=[1,38],
+                        disparities=disparities,
+                        car_width_m=car_width_m,
+                        angle_increment_rad=angle_increment_rad)
+        expected_result = [1.1, 1.2, 1.0, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 2.4, 2.4, 2.3, 2.6, 2.5, 2.4, 2.4, 2.3, 2.6, 2.5, 2.4, 2.4, 2.3, 2.6, 2.5]
         
-#         print("Modified ranges:")
-#         print(ranges)
-#         print("Expected ranges:")
-#         print(expected_result)
-#         self.assertEqual(ranges, expected_result)
+        print("Modified ranges:")
+        print(ranges)
+        print("Expected ranges:")
+        print(expected_result)
+        self.assertEqual(ranges, expected_result)
     
-#     def test_pad_single_left_disparity(self):
-#         ranges = [1.1, 1.2, 1.0, 1.1, 2.3, 2.5, 2.4, 2.4, 2.3, 2.6, 1.3, 1.2, 1.1, 1.0]
-#         pass
+    # def test_pad_single_left_disparity(self):
+    #     ranges = [1.1, 1.2, 1.0, 1.1, 2.3, 2.5, 2.4, 2.4, 2.3, 2.6, 1.3, 1.2, 1.1, 1.0]
+    #     pass
 
-#     def test_pad_no_disparity(self):
-#         pass
+    # def test_pad_no_disparity(self):
+    #     pass
 
-#     def test_pad_multi_left_disparity(self):
-#         pass
+    # def test_pad_multi_left_disparity(self):
+    #     pass
 
-#     def test_pad_multi_right_disparity(self):
-#         pass
+    # def test_pad_multi_right_disparity(self):
+    #     pass
     
-#     def test_pad_multi_mixed_disparity_1(self):
-#         pass
+    # def test_pad_multi_mixed_disparity_1(self):
+    #     pass
 
-#     def test_pad_multi_mixed_disparity_2(self):
-#         pass
+    # def test_pad_multi_mixed_disparity_2(self):
+    #     pass
 
 
 

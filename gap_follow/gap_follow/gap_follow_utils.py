@@ -244,7 +244,7 @@ def pad_disparities(ranges: List[float],
             # values (index values) that can comprise the desired arc.
             approx_desired_arc = 0.5*car_width_m
             num_ranges = num_ranges_in_arclength(arc_length_m=approx_desired_arc,
-                                                 arc_radius_m=disparity.left_index,
+                                                 arc_radius_m=ranges[disparity.left_index],
                                                  angle_increment_rad=angle_increment_rad)
             # Then, extend the range at the left index to the right num_ranges
             # times.
@@ -258,7 +258,7 @@ def pad_disparities(ranges: List[float],
             # values (index values) that can comprise the desired arc.
             approx_desired_arc = 0.5*car_width_m
             num_ranges = num_ranges_in_arclength(arc_length_m=approx_desired_arc,
-                                                 arc_radius_m=disparity.right_index,
+                                                 arc_radius_m=ranges[disparity.right_index],
                                                  angle_increment_rad=angle_increment_rad)
             # Then, extend the range at the right index to the left num_ranges times.
             extend_range_value_left(ranges=ranges,
