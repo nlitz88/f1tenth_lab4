@@ -257,5 +257,40 @@ class TestGetDisparity(unittest.TestCase):
         result = get_disparity(a, b, disparity_threshold)
         self.assertEqual(result, DisparityDirection.NO_DISPARITY)
 
+class TestPadDisparities(unittest.TestCase):
+
+    def test_pad_single_right_disparity(self):
+
+        ranges = [1.1, 1.2, 1.0, 1.1, 2.3, 2.5, 2.4, 2.4, 2.3, 2.6, 2.5, 2.4, 2.4, 2.3, 2.6, 2.5, 2.4, 2.4, 2.3, 2.6, 2.5, 2.4, 2.4, 2.3, 2.6, 2.5, 2.4, 2.4, 2.3, 2.6, 2.5, 2.4, 2.4, 2.3, 2.6, 2.5, 2.4, 2.4, 2.3, 2.6, 2.5]
+        angle_increment_rad = 0.004351851996034384
+        disparity_threshold_m = 0.3
+        car_width_m = 0.2032
+        pad_disparities(rangse=ranges,
+                        angle_increment_rad=angle_increment_rad,
+                        range_indices=[0,-1],
+                        disparity_threshold_m=disparity_threshold_m,
+                        car_width_m=car_width_m)
+        expected_result = [1.1, 1.2, 1.0, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 2.4, 2.4, 2.3, 2.6, 2.5, 2.4, 2.4, 2.3, 2.6, 2.5, 2.4, 2.4, 2.3, 2.6, 2.5]
+        self.assertEqual(ranges, expected_result)
+    
+    def test_pad_single_left_disparity(self):
+        ranges = [1.1, 1.2, 1.0, 1.1, 2.3, 2.5, 2.4, 2.4, 2.3, 2.6, 1.3, 1.2, 1.1, 1.0]
+        pass
+
+    def test_pad_no_disparity(self):
+        pass
+
+    def test_pad_multi_left_disparity(self):
+        pass
+
+    def test_pad_multi_right_disparity(self):
+        pass
+    
+    def test_pad_multi_mixed_disparity_1(self):
+        pass
+
+    def test_pad_multi_mixed_disparity_2(self):
+        pass
+
 if __name__ == "__main__":
     unittest.main()

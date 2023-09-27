@@ -201,7 +201,8 @@ def pad_disparities(ranges: List[float],
             # Compute the number of indices/spaces to extend based on the
             # car width and the range (==depth==distance) the shorter value
             # that disparity occurs at.
-            num_ranges = num_ranges_in_arclength(arc_length_m=0.5*car_width_m,
+            approx_desired_arc = 0.5*car_width_m
+            num_ranges = num_ranges_in_arclength(arc_length_m=approx_desired_arc,
                                                  arc_radius_m=left_range,
                                                  angle_increment_rad=angle_increment_rad)
             # The number of indices returned is the total number of indices
@@ -216,7 +217,8 @@ def pad_disparities(ranges: List[float],
             # Compute the number of indices/spaces to extend based on the
             # car width and the range (==depth==distance) the shorter value
             # that disparity occurs at.
-            num_ranges = num_ranges_in_arclength(arc_length_m=0.5*car_width_m,
+            approx_desired_arc = 0.5*car_width_m
+            num_ranges = num_ranges_in_arclength(arc_length_m=approx_desired_arc,
                                                  arc_radius_m=right_range,
                                                  angle_increment_rad=angle_increment_rad)
             # The number of indices returned is the total number of indices
@@ -225,8 +227,3 @@ def pad_disparities(ranges: List[float],
             extend_range_value_left(ranges=ranges,
                                     starting_index=right,
                                     spaces_to_extend=num_ranges - 1)
-        
-
-
-
-        
