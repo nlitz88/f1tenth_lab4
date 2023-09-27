@@ -105,6 +105,7 @@ def get_disparity_direction(a: float, b: float) -> DisparityDirection:
     return DisparityDirection.NO_DISPARITY
 
 def extend_range_value_right(ranges: List[float],
+                             range_indices: List[int],
                              starting_index: int, 
                              spaces_to_extend: int) -> None:
     """Extend the value in ranges at starting index to the spaces_to_extend
@@ -117,17 +118,12 @@ def extend_range_value_right(ranges: List[float],
         spaces_to_extend (int): The number of spaces to the right of the
         starting index to be assigned the value at the starting_index.
     """
-    # TODO: BIG OVERSIGHT: Basically, we need to make sure we're not letting
-    # this function step over the boundaries of the range of indices that we're
-    # currently working on. That is, I need to refactor this function (and the
-    # left one) to make sure this extension doesn't roll off the side. It might
-    # not matter this time around, but if any operations are added afterwards,
-    # that could get ugly. ESPECIALLY if I'm going to try and check for the side
-    # distances after doing disparity_steering.
-
+    # Grab the boundary indices from the range_indices.
+    start = range_indices[0]
+    end = range_indices[-1]
     # Check if the provided starting index is out of bounds.
-    if starting_index > len(ranges) - 1 or starting_index < 0:
-        raise Exception(f"Provided starting_index == {starting_index} is out of bounds of the ranges array (length == {len(ranges)} == [0, {len(ranges)-1}]) ")
+    if starting_index > end or starting_index < start:
+        raise Exception(f"Provided starting_index == {starting_index} is out of bounds of the ranges indices of the ranges array provided [{start},{end}].")
     # Also, ensure that the provided number of spaces_to_extend is non-negative.
     if spaces_to_extend < 0:
         raise Exception(f"Provided number of spaces to extend value at index {starting_index} of ranges array is negative! (spaces_to_extend=={spaces_to_extend})")
@@ -135,7 +131,7 @@ def extend_range_value_right(ranges: List[float],
     extension_value = ranges[starting_index]
     # Start the iteration at one past the current index.
     current_index = starting_index + 1
-    while current_index < len(ranges) and spaces_to_extend > 0:
+    while current_index <= end and spaces_to_extend > 0:
         ranges[current_index] = extension_value
         current_index += 1
         spaces_to_extend -= 1
@@ -324,7 +320,7 @@ def pad_disparities(ranges: List[float],
         LiDAR range value.
     """
     for disparity in disparities:
-        
+
         if disparity.direction == DisparityDirection.RIGHT:
             # If disparity direction was RIGHT, then compute the number of range
             # values (index values) that can comprise the desired arc.
