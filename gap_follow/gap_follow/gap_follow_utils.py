@@ -183,7 +183,26 @@ def pad_disparities(ranges: List[float],
                     angle_max_rad: float,
                     range_indices: List[int],
                     disparity_threshold_m: float,
-                    car_width: float) -> None:
+                    car_width_m: float) -> None:
+    """Finds disparities in ranges array and "pads them" with the smaller value
+    of the disparity such that the resulting gaps in the ranges array are known
+    to be passable.
+
+    Args:
+        ranges (List[float]): Array of range values from LaserScan.
+        angle_increment_rad (float): Angle increment )in radians) between each
+        LiDAR range value.
+        angle_min_rad (float): The minimum (smallest) angle measured by the
+        LiDAR from the scan at hand.
+        angle_max_rad (float): The maximum (most positive) angle measured by the
+        LiDAR from the scan at hand.
+        range_indices (List[int]): The beginning and ending indices of the
+        portion of ranges that disparities should be padded in.
+        disparity_threshold_m (float): The minimum distance between two
+        consecutive/contiguous range values for their difference to be
+        considered a disparity.
+        car_width_m (float): The width of the car in meters.
+    """
 
     start_index = range_indices[0]
     stop_index = range_indices[-1]
@@ -205,7 +224,7 @@ def pad_disparities(ranges: List[float],
             # car width and the range (==depth==distance) the shorter value
             # that disparity occurs at.
             arc_length_indices = get_arclength_index_count(radius_m=left_range,
-                                                           desired_arc_length_m=0.5*car_width,
+                                                           desired_arc_length_m=0.5*car_width_m,
                                                            angle_increment_rad=angle_increment_rad,
                                                            angle_min_rad=angle_min_rad,
                                                            angle_max_rad=angle_max_rad,
@@ -222,7 +241,7 @@ def pad_disparities(ranges: List[float],
             # car width and the range (==depth==distance) the shorter value
             # that disparity occurs at.
             arc_length_indices = get_arclength_index_count(radius_m=right_range,
-                                                           desired_arc_length_m=0.5*car_width,
+                                                           desired_arc_length_m=0.5*car_width_m,
                                                            angle_increment_rad=angle_increment_rad,
                                                            angle_min_rad=angle_min_rad,
                                                            angle_max_rad=angle_max_rad,
