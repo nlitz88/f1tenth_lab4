@@ -195,26 +195,27 @@ class ReactiveFollowGap(Node):
     # determine which state we go into next--not what action we take here and
     # now!
 
-    def __side_too_close(self,
-                         ranges: List[float],
-                         side_indices: List[int],
-                         minimum_distance_m: float) -> bool:
-        """Checks whether the robot is too close to an obstacle on the side
-        whose range indices are provided.
-
+    def __ranges_under_threshold(self,
+                                 ranges: List[float],
+                                 range_indices: List[int],
+                                 minimum_distance_m: float) -> bool:
+        """Checks whether any of the ranges (corresponding to range_indices)
+        fall under the provided minimum_distance threshold. Returns True if any
+        of those ranges fall under the minimum threshold, False if not. 
         Args:
             ranges (List[float]): Array of range values from the LaserScan.
-            side_indices (List[int]): List of indices that make up the
-            the angles on the desired side of the vehicle. These will be
-            obtained externally.
-            minimum_distance_m (float): The minimum distance the robot must be
-            from from the side provided (the side the indices correspond to).
+            range_indices (List[int]): List of indices of the ranges array. Used
+            to select a subset of the range values to evaluate.
+            minimum_distance_m (float): The minimum distance all specified
+            ranges must be for the function to return False. That is, if any of
+            the ranges specified fall under this threshold, the function returns
+            True.
 
         Returns:
-            bool: True if any of the ranges fall below the minimum side distance
+            bool: True if any of the ranges fall below the minimum distance
             threshold, False if not.
         """
-        for index in side_indices:
+        for index in range_indices:
             if ranges[index] < minimum_distance_m:
                 return True
         return False
@@ -346,6 +347,14 @@ class ReactiveFollowGap(Node):
         # Then, use the drive publisher to publish the ackermann steering
         # message with these values.
         self.publish_control(new_steering_angle=new_steering_angle, new_velocity=new_speed)
+        return
+    
+    def __disparity_control_state(self) -> None:
+        """Wrapper function for all the operations/actions to be carried out
+        while the car is in the DISPARITY_CONTROL state.
+        """
+
+
         return
 
     def __lidar_callback(self, laser_scan: LaserScan):
