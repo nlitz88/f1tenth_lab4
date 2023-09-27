@@ -11,7 +11,7 @@ from std_msgs.msg import String
 from rcl_interfaces.msg import SetParametersResult
 from threading import Lock
 
-from lidarutils import IndexRange, get_index_range_from_angles
+from lidarutils import IndexRange, get_index_range_from_angles, ranges_under_threshold
 
 class FollowGapState(Enum):
     INIT = 1
@@ -195,84 +195,34 @@ class ReactiveFollowGap(Node):
     # determine which state we go into next--not what action we take here and
     # now!
 
-    def __ranges_under_threshold(self,
-                                 ranges: List[float],
-                                 range_indices: List[int],
-                                 minimum_distance_m: float) -> bool:
-        """Checks whether any of the ranges (corresponding to range_indices)
-        fall under the provided minimum_distance threshold. Returns True if any
-        of those ranges fall under the minimum threshold, False if not. 
-
-        Args:
-            ranges (List[float]): Array of range values from the LaserScan.
-            range_indices (List[int]): List of indices of the ranges array. Used
-            to select a subset of the range values to evaluate.
-            minimum_distance_m (float): The minimum distance all specified
-            ranges must be for the function to return False. That is, if any of
-            the ranges specified fall under this threshold, the function returns
-            True.
-
-        Returns:
-            bool: True if any of the ranges fall below the minimum distance
-            threshold, False if not.
-        """
-        for index in range_indices:
-            if ranges[index] < minimum_distance_m:
-                return True
-        return False
-
     def __sides_too_close(self, ranges: List[float]) -> bool:
         """Returns whether or not the car is too close to an obstacle on either
         one of its sides. Uses the precomputed side 
 
         Args:
-            ranges (List[float]): _description_
+            ranges (List[float]): List of range values from the LaserScan to be
+            used to check for car's proximity to nearby obstacles on its sides.
 
         Returns:
-            bool: _description_
+            bool: True if the car is within the side_safety_dist_minimum_m
+            threshold on either side, False if not.
         """
-
-
-    def __side_too_close(self, laser_scan: LaserScan) -> bool:
-        """Checks whether the robot is too close to an obstacle or wall on
-        either side. Takes the ranges on its side and compares them against a
-        minimum distance threshold. 
-
-        Args:
-            laser_scan (LaserScan): LaserScan message from LiDAR containing the
-            ranges that'll be evalauted.
-
-        Returns:
-            bool: True if the car is too close, False if not.
-        """
-        # Grab ranges from laser_scan and threshold value from parameters.
-        ranges = laser_scan.ranges
-        minimum_dist = self.__get_local_parameter("side_safety_dist_minimum_m")        
-        # Look through the ranges between the left side indices to see if there
-        # are any that fall under the threshold.
-        for index in self.__left_side_index_range:
-            if ranges[index] < minimum_dist:
-                return True        
-        # Look through the ranges between the right side indices to see if there
-        # are any that fall under the threshold.
-        for index in self.__right_side_index_range:
-            if ranges[index] < minimum_dist:
-                return True
-        # Otherwise, return False, as the car isn't too close to an object or
-        # wall on either side.
-
-        # TODO: Am I sure that we don't need to also add the check somewhere
-        # here that looks to see if we're currently turning?
-        # I would think that it's not really necessary, as if this returns true,
-        # we can just literally have it steer straight (steering angle=0),
-        # whether we're already steering at that angle or not. UNLESS there's
-        # some advantage to just letting the algorithm handling it at that
-        # point.
-
-        # Actually, setting steering to 0 whether we're already turning or not
-        # could actually result in this thing continuing forward until it has
-        # completely cleared the corner--but could be dangerous as it may collid
-        # with the wall or obstacle beforehand. So maybe do need that check.
+        # First, grab the minimum distance threshold that we'll use for both
+        # sides.
+        minimum_distance_threshold = self.__get_local_parameter("side_safety_dist_minimum_m")
+        # First, check to see if it's too close to anything on its right side.
+        right_indices = self.__right_side_index_range.get_indices()
+        if ranges_under_threshold(ranges=ranges,
+                                  range_indices=right_indices,
+                                  minimum_distance_m=minimum_distance_threshold):
+            return True
+        # If the right is fine, check to left to make sure everything is okay.
+        left_indices = self.__left_side_index_range.get_indices()
+        if ranges_under_threshold(ranges=ranges,
+                                  range_indices=left_indices,
+                                  minimum_distance_m=minimum_distance_threshold):
+            return True
+        # Otherwise, it's not too close on either side, return False.
         return False
 
     def __steer_straight(self):
