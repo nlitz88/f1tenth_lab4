@@ -59,6 +59,33 @@ class TestExtendRangeValueLeft(unittest.TestCase):
         extend_range_value_left(ranges, starting_index, spaces_to_extend)
         self.assertEqual(ranges, [2.0, 2.0, 3.0, 4.0, 5.0])
 
+    def test_extend_full_length(self):
+        # Test case 3: Requesting an extension that would start at the end of
+        # the array and fill the entire length.
+        ranges = [1.0, 2.0, 3.0, 4.0, 5.0]
+        starting_index = 4
+        spaces_to_extend = 4
+        extend_range_value_left(ranges, starting_index, spaces_to_extend)
+        self.assertEqual(ranges, [5.0, 5.0, 5.0, 5.0, 5.0])
+
+    def test_extend_partial_length(self):
+        # Test case 3: Requesting an extension that would start at the end of
+        # the array and fill the entire length.
+        ranges = [1.0, 2.0, 3.0, 4.0, 5.0]
+        starting_index = 4
+        spaces_to_extend = 2
+        extend_range_value_left(ranges, starting_index, spaces_to_extend)
+        self.assertEqual(ranges, [1.0, 2.0, 5.0, 5.0, 5.0])
+
+    def test_extend_zero_length(self):
+        # Test case 3: Requesting an extension that would start at the end of
+        # the array and fill the entire length.
+        ranges = [1.0, 2.0, 3.0, 4.0, 5.0]
+        starting_index = 3
+        spaces_to_extend = 0
+        extend_range_value_left(ranges, starting_index, spaces_to_extend)
+        self.assertEqual(ranges, [1.0, 2.0, 3.0, 4.0, 5.0])
+
     def test_out_of_bounds_exception(self):
         # Test case 2: Ensure out-of-bounds exception is raised
         ranges = [1.0, 2.0, 3.0, 4.0, 5.0]

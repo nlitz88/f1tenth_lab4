@@ -176,17 +176,13 @@ def extend_range_value_left(ranges: List[float],
         raise Exception(f"Provided starting_index == {starting_index} is out of bounds of the ranges array (length == {len(ranges)} == [0, {len(ranges)-1}]) ")
     # If not, get the value at that index as the extension value.
     extension_value = ranges[starting_index]
-    # end = np.clip(starting_index - spaces_to_extend, a_min=0, a_max=len(ranges)-1)
-    # print(f"End: {end}")
-    # indices = IndexRange(starting_index=starting_index, ending_index=end).get_indices()
-    # print(indices)
-    # for index in indices:
-    #     ranges[index] = extension_value
     current_index = starting_index - 1
     while current_index >= 0 and spaces_to_extend > 0:
         ranges[current_index] = extension_value
         current_index -= 1
         spaces_to_extend -= 1
+
+    # TODO: STILL NEED TO UNIT TEST THE HELL OUT OF THIS FUNCTION!!!
 
 # Function to get disparities. What should this return/do? I could have it find
 # disparities (indices whose value difference meets or exceeds the threshold),
