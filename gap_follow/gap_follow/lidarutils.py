@@ -220,3 +220,28 @@ def get_arclength_index_count(radius_m: float,
                                      angle_increment_rad=angle_increment_rad,
                                      num_ranges=num_ranges)
     return int(end_index - start_index + 1)
+
+def ranges_under_threshold(ranges: List[float],
+                           range_indices: List[int],
+                           minimum_distance_m: float) -> bool:
+    """Checks whether any of the ranges (corresponding to range_indices)
+    fall under the provided minimum_distance threshold. Returns True if any
+    of those ranges fall under the minimum threshold, False if not. 
+
+    Args:
+        ranges (List[float]): Array of range values from the LaserScan.
+        range_indices (List[int]): List of indices of the ranges array. Used
+        to select a subset of the range values to evaluate.
+        minimum_distance_m (float): The minimum distance all specified
+        ranges must be for the function to return False. That is, if any of
+        the ranges specified fall under this threshold, the function returns
+        True.
+
+    Returns:
+        bool: True if any of the ranges fall below the minimum distance
+        threshold, False if not.
+    """
+    for index in range_indices:
+        if ranges[index] < minimum_distance_m:
+            return True
+    return False

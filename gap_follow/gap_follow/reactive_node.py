@@ -202,6 +202,7 @@ class ReactiveFollowGap(Node):
         """Checks whether any of the ranges (corresponding to range_indices)
         fall under the provided minimum_distance threshold. Returns True if any
         of those ranges fall under the minimum threshold, False if not. 
+
         Args:
             ranges (List[float]): Array of range values from the LaserScan.
             range_indices (List[int]): List of indices of the ranges array. Used
@@ -220,44 +221,15 @@ class ReactiveFollowGap(Node):
                 return True
         return False
 
-    def __right_side_too_close(self, 
-                               ranges: List[float], 
-                               right_side_indices: List[int],
-                               minimum_distance_m: float) -> bool:
-        """Checks whether the robot is too close to an obstacle on its right
-        side.
+    def __sides_too_close(self, ranges: List[float]) -> bool:
+        """Returns whether or not the car is too close to an obstacle on either
+        one of its sides. Uses the precomputed side 
 
         Args:
-            ranges (List[float]): Array of range values from the LaserScan.
-            right_side_indices (List[int]): List of indices that make up the
-            the angles on the "right side" of the robot.
-            minimum_distance_m (float): The minimum distance the robot must be
-            from the right side.
+            ranges (List[float]): _description_
 
         Returns:
-            bool: True if any of the ranges fall below the minimum side distance
-            threshold, False if not.
-        """
-        for index in right_side_indices:
-            if ranges[]
-
-    def __left_side_too_close(self, 
-                              ranges: List[float], 
-                              right_side_indices: List[int], 
-                              minimum_distance_m: float) -> bool:
-        """Checks whether the robot is too close to an obstacle on its left
-        side.
-
-        Args:
-            ranges (List[float]): Array of range values from the LaserScan.
-            left_side_indices (List[int]): List of indices that make up the
-            the angles on the "left side" of the robot.
-            minimum_distance_m (float): The minimum distance the robot must be
-            from the left side.
-
-        Returns:
-            bool: True if any of the ranges fall below the minimum side distance
-            threshold, False if not.
+            bool: _description_
         """
 
 
