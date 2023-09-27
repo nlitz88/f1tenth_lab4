@@ -2,6 +2,7 @@
 gap_follow node.
 """
 
+from enum import Enum
 from typing import List
 from lidarutils import get_angle_from_index, get_index_from_angle
 
@@ -88,6 +89,46 @@ def ranges_under_threshold(ranges: List[float],
             return True
     return False
 
+class DisparityDirection(Enum):
+    LEFT=1
+    RIGHT=2
+    NO_DISPARITY=3
+
+def get_disparity(a: float, b: float, disparity_threshold_m: float) -> DisparityDirection:
+    """Determines whether or not there is a sufficiently large disparity between
+    a and b, and if there is, returns the direction that disparity is in. 
+    
+    a is assumed to come before b in the array they come from. If a is less than
+    b, and their difference is >= threshold, then the direction of their
+    disparity is to the right (I.e., the value increases as you move to the
+    right through the source array). Vice versa for the LEFT disparities.
+
+    Args:
+        a (float): The value that comes first (lower index) in the source array.
+        b (float): The value that comes second (a's index + 1) in the source
+        array.
+        disparity_threshold_m (float): The threshold (in meters) for what the
+        difference in distance must be between ranges a and b in order for their
+        difference to be considered a disparity.
+
+    Returns:
+        DisparityDirection: LEFT for a left disparity (a>>b), RIGHT
+        for a right disparity (a<<b), and NO_DISPARITY for a disparity that
+        isn't large enough.
+    """
+    disparity = a - b
+    if abs(disparity) < disparity_threshold_m:
+        return DisparityDirection.NO_DISPARITY
+    if disparity < 0:
+        # Ex: [1,1,1,2,8,8,8,2,3,1,1,1]. Disparity 2-8 == -6 --> 2 gets extended
+        # to the right.
+        return DisparityDirection.RIGHT
+    if disparity > 0:
+        return DisparityDirection.LEFT
+    # While this case should never be executed, return NO_DISPARITY by default
+    # just in case.
+    return DisparityDirection.NO_DISPARITY
+
 def is_disparity(a: float, b: float, disparity_threshold_m: float) -> bool:
     """Returns whether or not the difference between two values marks a
     disparity--based on whether the difference of those two items exceeds the
@@ -106,6 +147,17 @@ def is_disparity(a: float, b: float, disparity_threshold_m: float) -> bool:
         return True
     return False
 
+
+
+
+
+def extend_range_value(ranges: List[float],
+                       original_index: int, 
+                       spaces_to_extend: int, 
+                       direction: DisparityDirection) -> None:
+    
+    pass
+
 # Function to get disparities. What should this return/do? I could have it find
 # disparities (indices whose value difference meets or exceeds the threshold),
 # and then could extend those. 
@@ -113,4 +165,24 @@ def is_disparity(a: float, b: float, disparity_threshold_m: float) -> bool:
 # Could loop through the provided ranges and run a check "is_disparity" and then
 # decide to extend if so. Will need the is_disparity function anyway for a pair
 # of values, so write that here regardless.
-# def disparities_in_ranges(disparity_threshold_m: float)
+
+# def pad_disparities(ranges: List[float],
+#                     range_indices: List[int],
+#                     disparity_threshold_m: float) -> None:
+
+#     start_index = range_indices[0]
+#     stop_index = range_indices[-1]
+#     # Iterate through each pair of values in the ranges array. Evaluate whether
+#     # or not each pair is a disparity or not.
+#     for left in range(start_index, stop_index - 2):
+#         right = left + 1
+
+#         left_range = ranges[left]
+#         right_range = ranges[right]
+#         if is_disparity(left_range, right_range):
+            
+#             # only trouble with this--figuring out which way to extend the
+#             # values may not be as clean.
+
+
+        

@@ -60,5 +60,39 @@ class TestIsDisparity(unittest.TestCase):
         result = is_disparity(a, b, disparity_threshold)
         self.assertTrue(result)
 
+class TestGetDisparity(unittest.TestCase):
+
+    def test_right_disparity(self):
+        # Test when a < b and the difference exceeds the disparity threshold
+        a = 5.0
+        b = 8.0
+        disparity_threshold = 2.0
+        result = get_disparity(a, b, disparity_threshold)
+        self.assertEqual(result, DisparityDirection.RIGHT)
+
+    def test_left_disparity(self):
+        # Test when a > b and the difference exceeds the disparity threshold
+        a = 8.0
+        b = 5.0
+        disparity_threshold = 2.0
+        result = get_disparity(a, b, disparity_threshold)
+        self.assertEqual(result, DisparityDirection.LEFT)
+
+    def test_no_disparity(self):
+        # Test when the difference between a and b is below the disparity threshold
+        a = 5.0
+        b = 5.5
+        disparity_threshold = 1.0
+        result = get_disparity(a, b, disparity_threshold)
+        self.assertEqual(result, DisparityDirection.NO_DISPARITY)
+
+    def test_default_no_disparity(self):
+        # Test when the function should return NO_DISPARITY by default (unexpected case)
+        a = 3.0
+        b = 3.0
+        disparity_threshold = 1.0
+        result = get_disparity(a, b, disparity_threshold)
+        self.assertEqual(result, DisparityDirection.NO_DISPARITY)
+
 if __name__ == "__main__":
     unittest.main()
