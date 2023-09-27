@@ -138,20 +138,36 @@ def get_disparity(a: float, b: float, disparity_threshold_m: float) -> Disparity
 def extend_range_value_right(ranges: List[float],
                              starting_index: int, 
                              spaces_to_extend: int) -> None:
-    
+    """Extend the value in ranges at starting index to the spaces_to_extend
+    values to its right.
+
+    Args:
+        ranges (List[float]): Array of range values.
+        starting_index (int): Index of value that will be copied to
+        spaces_to_extend entries to the right.
+        spaces_to_extend (int): The number of spaces to the right of the
+        starting index to be assigned the value at the starting_index.
+    """
     extension_value = ranges[starting_index]
-    for offset in range(1, spaces_to_extend, __step=1):
+    for offset in range(1, spaces_to_extend+1, __step=1):
         ranges[starting_index + offset] = extension_value
-        pass
-    pass
 
 def extend_range_value_left(ranges: List[float],
                             starting_index: int, 
                             spaces_to_extend: int) -> None:
-    
-    # Based on the provided direction, 
-    
-    pass
+    """Extend the value in ranges at starting index to the spaces_to_extend
+    values to its left.
+
+    Args:
+        ranges (List[float]): Array of range values.
+        starting_index (int): Index of value that will be copied to
+        spaces_to_extend entries to the left.
+        spaces_to_extend (int): The number of spaces to the left of the
+        starting index to be assigned the value at the starting_index.
+    """
+    extension_value = ranges[starting_index]
+    for offset in range(-1, -spaces_to_extend - 1, __step=-1):
+        ranges[starting_index + offset] = extension_value
 
 # Function to get disparities. What should this return/do? I could have it find
 # disparities (indices whose value difference meets or exceeds the threshold),
@@ -217,7 +233,7 @@ def pad_disparities(ranges: List[float],
                                     starting_index=right,
                                     spaces_to_extend=arc_length_indices)
         
-        
+
 
 
         
