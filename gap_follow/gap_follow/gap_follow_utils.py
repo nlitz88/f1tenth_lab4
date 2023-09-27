@@ -6,6 +6,11 @@ from enum import Enum
 from typing import List
 from lidarutils import get_angle_from_index, get_index_from_angle
 
+# NOTE: If I can't get this arclength function to work (for whatever reason),
+# could always just re-implement a naive version of it that simply returns a
+# fixed value, like something we could parameterize. In fact, I could probably
+# try to test the whole pipeline first with a fixed number--that could work too. 
+
 # Generally speaking, need a function that, given the desired circumference
 # covered (at a particular given range == radius), should return the indices of
 # the angles that go from the starting index to the index of the last angle
@@ -35,7 +40,8 @@ def get_arclength_index_count(radius_m: float,
     Returns:
         int: The number of indices == number of range values from the range
         array that, if plotted, would form an arc of approximately the desired
-        length.
+        length. Could also call this the arc length expressed as the number of
+        consecutive range values that create that arc.
     """
 
     # To compute this, we basically just need to compute what the theta of the
@@ -129,32 +135,12 @@ def get_disparity(a: float, b: float, disparity_threshold_m: float) -> Disparity
     # just in case.
     return DisparityDirection.NO_DISPARITY
 
-def is_disparity(a: float, b: float, disparity_threshold_m: float) -> bool:
-    """Returns whether or not the difference between two values marks a
-    disparity--based on whether the difference of those two items exceeds the
-    disparity threshold.
-
-    Args:
-        a (float): First value.
-        b (float): Second value.
-        disparity_threshold_m (float): The smallest number of meters that a and
-        b must differ by in order to be considered a disparity.
-
-    Returns:
-        bool: True if there is a disparity between a and b, False if not.
-    """
-    if abs(a-b) >= disparity_threshold_m:
-        return True
-    return False
-
-
-
-
-
 def extend_range_value(ranges: List[float],
-                       original_index: int, 
+                       starting_index: int, 
                        spaces_to_extend: int, 
                        direction: DisparityDirection) -> None:
+    
+    # 
     
     pass
 
@@ -166,23 +152,47 @@ def extend_range_value(ranges: List[float],
 # decide to extend if so. Will need the is_disparity function anyway for a pair
 # of values, so write that here regardless.
 
-# def pad_disparities(ranges: List[float],
-#                     range_indices: List[int],
-#                     disparity_threshold_m: float) -> None:
+def pad_disparities(ranges: List[float],
+                    angle_increment_rad: float,
+                    angle_min_rad: float,
+                    angle_max_rad: float,
+                    range_indices: List[int],
+                    disparity_threshold_m: float,
+                    car_width: float) -> None:
 
-#     start_index = range_indices[0]
-#     stop_index = range_indices[-1]
-#     # Iterate through each pair of values in the ranges array. Evaluate whether
-#     # or not each pair is a disparity or not.
-#     for left in range(start_index, stop_index - 2):
-#         right = left + 1
+    start_index = range_indices[0]
+    stop_index = range_indices[-1]
+    # Iterate through each pair of values in the ranges array. Evaluate whether
+    # or not each pair is a disparity or not.
+    for left in range(start_index, stop_index - 2):
+        right = left + 1
 
-#         left_range = ranges[left]
-#         right_range = ranges[right]
-#         if is_disparity(left_range, right_range):
-            
-#             # only trouble with this--figuring out which way to extend the
-#             # values may not be as clean.
+        left_range = ranges[left]
+        right_range = ranges[right]
+        
+        disparity = get_disparity(a=left_range,
+                                  b=right_range,
+                                  disparity_threshold_m=disparity_threshold_m)
+        
+        if disparity == DisparityDirection.RIGHT:
+
+            # Compute the number of indices/spaces to extend based on the
+            # car width and the range (==depth==distance) the shorter value
+            # that disparity occurs at.
+            num_extend_indices = get_arclength_index_count(radius_m=left_range,
+                                                           desired_arc_length_m=0.5*car_width,
+                                                           angle_increment_rad=angle_increment_rad,
+                                                           angle_min_rad=angle_min_rad,
+                                                           angle_max_rad=angle_max_rad,
+                                                           num_ranges=len(ranges))
+
+            extend_range_value(ranges=ranges, 
+                               starting_index=left,
+                               spaces_to_extend=num_extend_indices,
+                               direction=DisparityDirection.RIGHT)
+
+            # only trouble with this--figuring out which way to extend the
+            # values may not be as clean.
 
 
         
