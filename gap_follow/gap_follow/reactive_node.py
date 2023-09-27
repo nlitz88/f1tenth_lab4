@@ -330,6 +330,24 @@ class ReactiveFollowGap(Node):
         """
         return None
 
+    def __moving_straight_state(self) -> None:
+        """Wrapper function for all the operations ("side effects") to be
+        carried out in the MOVING_FORWARD state. Sets steering angle to 0, speed
+        equal to its previous value, and publishes the Ackermann message to
+        /drive.
+        """
+        new_steering_angle = 0.0
+        # TODO: In case the speed is too high in these scenarios, add an
+        # instance variable that stores the last followed gap depth, and
+        # compute what the new velocity should be based on that previous
+        # depth, but with the distance travelled since that was sent
+        # (calculated using current velocity and time between cycles).
+        new_speed = self.__last_drive_message.drive.speed
+        # Then, use the drive publisher to publish the ackermann steering
+        # message with these values.
+        self.publish_control(new_steering_angle=new_steering_angle, new_velocity=new_speed)
+        return
+
     def __lidar_callback(self, laser_scan: LaserScan):
         """ Process each LiDAR scan as per the Follow Gap algorithm & publish an
         AckermannDriveStamped Message.
@@ -346,16 +364,7 @@ class ReactiveFollowGap(Node):
             
             # Apply side effects of being in MOVING_STRAIGHT state. I.e., set
             # steering angle to 0 and make speed unchanged.
-            new_steering_angle = 0.0
-            # TODO: In case the speed is too high in these scenarios, add an
-            # instance variable that stores the last followed gap depth, and
-            # compute what the new velocity should be based on that previous
-            # depth, but with the distance travelled since that was sent
-            # (calculated using current velocity and time between cycles).
-            new_speed = self.__last_drive_message.drive.speed
-            # Then, use the drive publisher to publish the ackermann steering
-            # message with these values.
-            self.publish_control(new_steering_angle=new_steering_angle, new_velocity=new_speed)
+            self.__moving_straight_state()
 
             # Guard condition here.
             # If side is still too close, continue moving straight.
