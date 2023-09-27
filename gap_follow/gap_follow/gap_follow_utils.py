@@ -170,10 +170,6 @@ def pad_disparities(ranges: List[float],
         ranges (List[float]): Array of range values from LaserScan.
         angle_increment_rad (float): Angle increment )in radians) between each
         LiDAR range value.
-        angle_min_rad (float): The minimum (smallest) angle measured by the
-        LiDAR from the scan at hand.
-        angle_max_rad (float): The maximum (most positive) angle measured by the
-        LiDAR from the scan at hand.
         range_indices (List[int]): The beginning and ending indices of the
         portion of ranges that disparities should be padded in.
         disparity_threshold_m (float): The minimum distance between two
@@ -195,9 +191,10 @@ def pad_disparities(ranges: List[float],
         disparity = get_disparity(a=left_range,
                                   b=right_range,
                                   disparity_threshold_m=disparity_threshold_m)
-        
+
         if disparity == DisparityDirection.RIGHT:
 
+            print(f"Found RIGHT disparity: {left_range}, {right_range}")
             # Compute the number of indices/spaces to extend based on the
             # car width and the range (==depth==distance) the shorter value
             # that disparity occurs at.
@@ -205,12 +202,34 @@ def pad_disparities(ranges: List[float],
             num_ranges = num_ranges_in_arclength(arc_length_m=approx_desired_arc,
                                                  arc_radius_m=left_range,
                                                  angle_increment_rad=angle_increment_rad)
+            
+            print(f"Num ranges in arc length at range {left_range}: {num_ranges}")
             # The number of indices returned is the total number of indices
             # needed to create that arc. Therefore, only extend by num - 1, as
             # there is already a value at the starting_index.
+            print("Ranges before value extension: ")
+            print(ranges)
             extend_range_value_right(ranges=ranges, 
                                      starting_index=left,
                                      spaces_to_extend=num_ranges - 1)
+
+            # Okay, problem. Basically, when we do one range extension, we end
+            # up creating a new disparity further down the line. And if we're
+            # just extending these one after another, then if we have a gap, for
+            # example, we'd just keep extending until the whole gap is covered
+            # over. So this approach doesn't work.
+
+            # Instead, we really need to go through the array first one time,
+            # find all the disparities, record their "direction" and which value
+            # we want extended. Then, have another loop that goes back and
+            # performs those extensions after the fact.
+            
+            # Therefore, we should break up this function into two separate
+            # functions: 
+            # 1. find_disparities
+            # 2. pad_disparities
+
+            
         
         elif disparity == DisparityDirection.LEFT:
             

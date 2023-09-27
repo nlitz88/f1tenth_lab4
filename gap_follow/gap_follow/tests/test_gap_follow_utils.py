@@ -120,6 +120,15 @@ class TestExtendRangeValueRight(unittest.TestCase):
         extend_range_value_right(ranges, starting_index, spaces_to_extend)
         self.assertEqual(ranges, [1.0, 2.0, 3.0, 3.0, 3.0])
 
+    def test_extend_right_in_bounds_2(self):
+        # Similar to 1, but tests extension when num spaces doesn't meet or
+        # exceed the length of the array.
+        ranges = [1.0, 2.0, 3.0, 4.0, 5.0, 4.0, 2.3, 1.9, 3.4, 9.7, 2.3]
+        starting_index = 2
+        spaces_to_extend = 2
+        extend_range_value_right(ranges, starting_index, spaces_to_extend)
+        expected_result = [1.0, 2.0, 3.0, 3.0, 3.0, 4.0, 2.3, 1.9, 3.4, 9.7, 2.3]
+
     def test_extend_right_with_clipping(self):
         # Test case 2: Requesting an extension that would step past the start of
         # the array.
@@ -265,12 +274,17 @@ class TestPadDisparities(unittest.TestCase):
         angle_increment_rad = 0.004351851996034384
         disparity_threshold_m = 0.3
         car_width_m = 0.2032
-        pad_disparities(rangse=ranges,
+        pad_disparities(ranges=ranges,
                         angle_increment_rad=angle_increment_rad,
-                        range_indices=[0,-1],
+                        range_indices=[0,len(ranges)-1],
                         disparity_threshold_m=disparity_threshold_m,
                         car_width_m=car_width_m)
-        expected_result = [1.1, 1.2, 1.0, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 2.4, 2.4, 2.3, 2.6, 2.5, 2.4, 2.4, 2.3, 2.6, 2.5, 2.4, 2.4, 2.3, 2.6, 2.5]
+        expected_result = [1.1, 1.2, 1.0, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 2.4, 2.3, 2.6, 2.5, 2.4, 2.4, 2.3, 2.6, 2.5, 2.4, 2.4, 2.3, 2.6, 2.5]
+        
+        print("Modified ranges:")
+        print(ranges)
+        print("Expected ranges:")
+        print(expected_result)
         self.assertEqual(ranges, expected_result)
     
     def test_pad_single_left_disparity(self):
