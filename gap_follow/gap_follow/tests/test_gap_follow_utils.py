@@ -125,7 +125,7 @@ class TestExtendRangeValueLeft(unittest.TestCase):
         starting_index = 6
         spaces_to_extend = 2
         range_indices = [2,3,4,5,6,7,8]
-        extend_range_value_right(ranges=ranges, range_indices=range_indices, starting_index=starting_index, spaces_to_extend=spaces_to_extend)
+        extend_range_value_left(ranges=ranges, range_indices=range_indices, starting_index=starting_index, spaces_to_extend=spaces_to_extend)
         expected_result = [1.0, 2.0, 3.0, 4.0, 2.3, 2.3, 2.3, 1.9, 3.4, 9.7, 2.3]
         self.assertEqual(ranges, expected_result)
 
