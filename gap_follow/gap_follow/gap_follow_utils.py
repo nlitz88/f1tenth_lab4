@@ -159,8 +159,6 @@ def extend_range_value_left(ranges: List[float],
 
 def pad_disparities(ranges: List[float],
                     angle_increment_rad: float,
-                    angle_min_rad: float,
-                    angle_max_rad: float,
                     range_indices: List[int],
                     disparity_threshold_m: float,
                     car_width_m: float) -> None:
