@@ -58,6 +58,15 @@ class TestExtendRangeValueLeft(unittest.TestCase):
         spaces_to_extend = 2
         extend_range_value_left(ranges, starting_index, spaces_to_extend)
         self.assertEqual(ranges, [2.0, 2.0, 3.0, 4.0, 5.0])
+    
+    def test_extend_left_with_more_clipping(self):
+        # Test case 2: Requesting an extension that would step past the start of
+        # the array.
+        ranges = [1.0, 2.0, 3.0, 4.0, 5.0]
+        starting_index = 0
+        spaces_to_extend = 12
+        extend_range_value_left(ranges, starting_index, spaces_to_extend)
+        self.assertEqual(ranges, [1.0, 2.0, 3.0, 4.0, 5.0])
 
     def test_extend_full_length(self):
         # Test case 3: Requesting an extension that would start at the end of
@@ -69,7 +78,7 @@ class TestExtendRangeValueLeft(unittest.TestCase):
         self.assertEqual(ranges, [5.0, 5.0, 5.0, 5.0, 5.0])
 
     def test_extend_partial_length(self):
-        # Test case 3: Requesting an extension that would start at the end of
+        # Test case 4: Requesting an extension that would start at the end of
         # the array and fill the entire length.
         ranges = [1.0, 2.0, 3.0, 4.0, 5.0]
         starting_index = 4
@@ -78,7 +87,7 @@ class TestExtendRangeValueLeft(unittest.TestCase):
         self.assertEqual(ranges, [1.0, 2.0, 5.0, 5.0, 5.0])
 
     def test_extend_zero_length(self):
-        # Test case 3: Requesting an extension that would start at the end of
+        # Test case 5: Requesting an extension that would start at the end of
         # the array and fill the entire length.
         ranges = [1.0, 2.0, 3.0, 4.0, 5.0]
         starting_index = 3
@@ -86,13 +95,94 @@ class TestExtendRangeValueLeft(unittest.TestCase):
         extend_range_value_left(ranges, starting_index, spaces_to_extend)
         self.assertEqual(ranges, [1.0, 2.0, 3.0, 4.0, 5.0])
 
+    def test_extend_negative_spaces(self):
+        # Test case 6: What happens when spaces_to_extend is negative?
+        ranges = [1.0, 2.0, 3.0, 4.0, 5.0]
+        starting_index = 1
+        spaces_to_extend = -3 # Negative number of spaces_to_extend.
+        with self.assertRaises(Exception) as context:
+            extend_range_value_left(ranges, starting_index, spaces_to_extend)
+        self.assertTrue("is negative" in str(context.exception))
+
     def test_out_of_bounds_exception(self):
-        # Test case 2: Ensure out-of-bounds exception is raised
+        # Test case 7: Ensure out-of-bounds exception is raised
         ranges = [1.0, 2.0, 3.0, 4.0, 5.0]
         starting_index = 10  # Out of bounds index
         spaces_to_extend = 2
         with self.assertRaises(Exception) as context:
             extend_range_value_left(ranges, starting_index, spaces_to_extend)
+        self.assertTrue("out of bounds" in str(context.exception))
+
+class TestExtendRangeValueRight(unittest.TestCase):
+
+    def test_extend_right_in_bounds(self):
+        # Test case 1: Extending to the right within the bounds of the list
+        ranges = [1.0, 2.0, 3.0, 4.0, 5.0]
+        starting_index = 2
+        spaces_to_extend = 2
+        extend_range_value_right(ranges, starting_index, spaces_to_extend)
+        self.assertEqual(ranges, [1.0, 2.0, 3.0, 3.0, 3.0])
+
+    def test_extend_right_with_clipping(self):
+        # Test case 2: Requesting an extension that would step past the start of
+        # the array.
+        ranges = [1.0, 2.0, 3.0, 4.0, 5.0]
+        starting_index = 3
+        spaces_to_extend = 2
+        extend_range_value_right(ranges, starting_index, spaces_to_extend)
+        self.assertEqual(ranges, [1.0, 2.0, 3.0, 4.0, 4.0])
+    
+    def test_extend_right_with_more_clipping(self):
+        # Test case 2: Requesting an extension that would step past the start of
+        # the array.
+        ranges = [1.0, 2.0, 3.0, 4.0, 5.0]
+        starting_index = 4
+        spaces_to_extend = 12
+        extend_range_value_right(ranges, starting_index, spaces_to_extend)
+        self.assertEqual(ranges, [1.0, 2.0, 3.0, 4.0, 5.0])
+
+    def test_extend_full_length(self):
+        # Test case 3: Requesting an extension that would start at the end of
+        # the array and fill the entire length.
+        ranges = [1.0, 2.0, 3.0, 4.0, 5.0]
+        starting_index = 0
+        spaces_to_extend = 4
+        extend_range_value_right(ranges, starting_index, spaces_to_extend)
+        self.assertEqual(ranges, [1.0, 1.0, 1.0, 1.0, 1.0])
+
+    def test_extend_partial_length(self):
+        # Test case 4: Requesting an extension
+        ranges = [1.0, 2.0, 3.0, 4.0, 5.0]
+        starting_index = 1
+        spaces_to_extend = 2
+        extend_range_value_right(ranges, starting_index, spaces_to_extend)
+        self.assertEqual(ranges, [1.0, 2.0, 2.0, 2.0, 5.0])
+
+    def test_extend_zero_length(self):
+        # Test case 5: Requesting an extension that would start at the end of
+        # the array and fill the entire length.
+        ranges = [1.0, 2.0, 3.0, 4.0, 5.0]
+        starting_index = 3
+        spaces_to_extend = 0
+        extend_range_value_right(ranges, starting_index, spaces_to_extend)
+        self.assertEqual(ranges, [1.0, 2.0, 3.0, 4.0, 5.0])
+    
+    def test_extend_negative_spaces(self):
+        # Test case 6: What happens when spaces_to_extend is negative?
+        ranges = [1.0, 2.0, 3.0, 4.0, 5.0]
+        starting_index = 1
+        spaces_to_extend = -3 # Negative number of spaces_to_extend.
+        with self.assertRaises(Exception) as context:
+            extend_range_value_right(ranges, starting_index, spaces_to_extend)
+        self.assertTrue("is negative" in str(context.exception))
+
+    def test_out_of_bounds_exception(self):
+        # Test case 7: Ensure out-of-bounds exception is raised
+        ranges = [1.0, 2.0, 3.0, 4.0, 5.0]
+        starting_index = 10  # Out of bounds index
+        spaces_to_extend = 2
+        with self.assertRaises(Exception) as context:
+            extend_range_value_right(ranges, starting_index, spaces_to_extend)
         self.assertTrue("out of bounds" in str(context.exception))
 
 class TestRangesUnderThreshold(unittest.TestCase):

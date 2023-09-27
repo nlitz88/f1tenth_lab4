@@ -150,9 +150,20 @@ def extend_range_value_right(ranges: List[float],
         spaces_to_extend (int): The number of spaces to the right of the
         starting index to be assigned the value at the starting_index.
     """
+    # Check if the provided starting index is out of bounds.
+    if starting_index > len(ranges) - 1 or starting_index < 0:
+        raise Exception(f"Provided starting_index == {starting_index} is out of bounds of the ranges array (length == {len(ranges)} == [0, {len(ranges)-1}]) ")
+    # Also, ensure that the provided number of spaces_to_extend is non-negative.
+    if spaces_to_extend < 0:
+        raise Exception(f"Provided number of spaces to extend value at index {starting_index} of ranges array is negative! (spaces_to_extend=={spaces_to_extend})")
+   # If not, get the value at that index as the extension value.
     extension_value = ranges[starting_index]
-    for offset in range(1, spaces_to_extend+1, __step=1):
-        ranges[starting_index + offset] = extension_value
+    # Start the iteration at one past the current index.
+    current_index = starting_index + 1
+    while current_index < len(ranges) and spaces_to_extend > 0:
+        ranges[current_index] = extension_value
+        current_index += 1
+        spaces_to_extend -= 1
 
 def extend_range_value_left(ranges: List[float],
                             starting_index: int, 
@@ -167,13 +178,12 @@ def extend_range_value_left(ranges: List[float],
         spaces_to_extend (int): The number of spaces to the left of the
         starting index to be assigned the value at the starting_index.
     """
-    # NOTE: IDENTIFIED ERROR IN THIS FUNCTION. IT WILL GO OUT OF BOUNDS!! Can I
-    # use some sort of clipping in combination with my IndexRange class to
-    # neaten this up and make it safer?
-
     # Check if the provided starting index is out of bounds.
     if starting_index > len(ranges) - 1 or starting_index < 0:
         raise Exception(f"Provided starting_index == {starting_index} is out of bounds of the ranges array (length == {len(ranges)} == [0, {len(ranges)-1}]) ")
+    # Also, ensure that the provided number of spaces_to_extend is non-negative.
+    if spaces_to_extend < 0:
+        raise Exception(f"Provided number of spaces to extend value at index {starting_index} of ranges array is negative! (spaces_to_extend=={spaces_to_extend})")
     # If not, get the value at that index as the extension value.
     extension_value = ranges[starting_index]
     current_index = starting_index - 1
