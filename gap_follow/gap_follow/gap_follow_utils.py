@@ -87,3 +87,30 @@ def ranges_under_threshold(ranges: List[float],
         if ranges[index] < minimum_distance_m:
             return True
     return False
+
+def is_disparity(a: float, b: float, disparity_threshold_m: float) -> bool:
+    """Returns whether or not the difference between two values marks a
+    disparity--based on whether the difference of those two items exceeds the
+    disparity threshold.
+
+    Args:
+        a (float): First value.
+        b (float): Second value.
+        disparity_threshold_m (float): The smallest number of meters that a and
+        b must differ by in order to be considered a disparity.
+
+    Returns:
+        bool: True if there is a disparity between a and b, False if not.
+    """
+    if abs(a-b) >= disparity_threshold_m:
+        return True
+    return False
+
+# Function to get disparities. What should this return/do? I could have it find
+# disparities (indices whose value difference meets or exceeds the threshold),
+# and then could extend those. 
+
+# Could loop through the provided ranges and run a check "is_disparity" and then
+# decide to extend if so. Will need the is_disparity function anyway for a pair
+# of values, so write that here regardless.
+# def disparities_in_ranges(disparity_threshold_m: float)

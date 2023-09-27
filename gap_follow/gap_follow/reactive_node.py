@@ -167,7 +167,8 @@ class ReactiveFollowGap(Node):
         with self.__robot_width_mutex:
             return self.__robot_width
         
-    def publish_control(self, new_steering_angle: float, 
+    def publish_control(self, 
+                        new_steering_angle: float, 
                         new_velocity: float) -> None:
         """Helper function that handles publishing the provided steering angle
         and velocity to the drive topic. Constructs an AckermannDriveStamped
@@ -277,8 +278,33 @@ class ReactiveFollowGap(Node):
         #    to implement this first, just to see what performance is like
         #    without it.
 
-        # 2. 
+        # 2. Next, find all the index pairs in the ranges array where there is a
+        #    disparity that exceeds the disparity threshold.
+        
 
+        # 3. Then, extend each disparity according to the width of the car and
+        #    the depth (range) at which that disparity occurs.
+        # NOTE: steps 2 and 3 could probably be combined into a single function.
+        # However, probably more testable and easier to understand if they're
+        # separate for now.
+
+        # 4. Then, write function for that finds the start and end index of each
+        #    gap in the range. Can find the max depth of each gap as well, and
+        #    return them in sorted order (using something like heapify?).
+        #    Probably break this step up internally into two smaller steps.
+
+        # 5. Then, call a function that gets the middle of the selected gap.
+        #    I.e., returns the index of the middle of that gap. Can call the
+        #    lidarutils function that gets an angle from that index and returns
+        #    that.
+
+        # 6. Finally, call a separate function that computes velocity as a
+        #    function of the depth of the selected gap. Could also use a
+        #    simplified version of this function for now that just uses constant
+        #    speed, or could also base it on steering angle.
+
+        # 7. Finally, call function to publish newly computed steering angle and
+        #    speed.
         self.publish_control(new_steering_angle=18239192387123.232, new_velocity=891283213.23)
         return
 
