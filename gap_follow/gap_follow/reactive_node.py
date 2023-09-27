@@ -11,7 +11,8 @@ from std_msgs.msg import String
 from rcl_interfaces.msg import SetParametersResult
 from threading import Lock
 
-from lidarutils import IndexRange, get_index_range_from_angles, ranges_under_threshold
+from lidarutils import IndexRange, get_index_range_from_angles
+from gap_follow_utils import ranges_under_threshold
 
 class FollowGapState(Enum):
     INIT = 1
@@ -186,14 +187,6 @@ class ReactiveFollowGap(Node):
         # Publish the populated message to the drive topic.
         self.__drive_publisher.publish(drive_message)
         return
-    
-    # Maybe as a general rule of thumb (which sorta stems from stateful design:
-    # separate the check from the control). That is, no state should have any
-    # conditionally executed logic--therefore, if we're trying to model our
-    # functions properly (with some hint of stateful design thrown in there),
-    # then we should separate the logic from the actions. The logic should
-    # determine which state we go into next--not what action we take here and
-    # now!
 
     def __sides_too_close(self, ranges: List[float]) -> bool:
         """Returns whether or not the car is too close to an obstacle on either
@@ -271,12 +264,22 @@ class ReactiveFollowGap(Node):
         self.publish_control(new_steering_angle=new_steering_angle, new_velocity=new_speed)
         return
     
-    def __disparity_control_state(self) -> None:
+    def __disparity_control_state(self, ranges: List[float]) -> None:
         """Wrapper function for all the operations/actions to be carried out
         while the car is in the DISPARITY_CONTROL state.
         """
 
+        # Before doing anything else, grab the working range of indices. I.e.,
+        # all range values except for those on the side.
+        range_indices = self.__middle_index_range.get_indices()
 
+        # 1. (TODO) Clamp all range values to maximum depth value. Choosing not
+        #    to implement this first, just to see what performance is like
+        #    without it.
+
+        # 2. 
+
+        self.publish_control(new_steering_angle=18239192387123.232, new_velocity=891283213.23)
         return
 
     def __lidar_callback(self, laser_scan: LaserScan):
@@ -299,20 +302,23 @@ class ReactiveFollowGap(Node):
 
             # Guard condition here.
             # If side is still too close, continue moving straight.
-            if self.__side_too_close():
+            # TODO: just NOTE that I MAY HAVE TO also add a second guard
+            # condition here to check whether our steering angle is nonzero.
+            # This comes directly from the slides on disparity based control.
+            if self.__sides_too_close(ranges=ranges):
                 self.__current_state = FollowGapState.MOVING_STRAIGHT
             # Otherwise, switch back to disparity control state.
             else:
                 self.__current_state = FollowGapState.DISPARITY_CONTROL
 
-
         elif self.__current_state == FollowGapState.DISPARITY_CONTROL:
 
-
+            # Take the ranges and 
+            self.__disparity_control_state(ranges=ranges)
 
             # Guard Condition here.
             # If side is still too close, continue moving straight.
-            if self.__side_too_close():
+            if self.__sides_too_close(ranges=ranges):
                 self.__current_state = FollowGapState.MOVING_STRAIGHT
             # Otherwise, remain in disparity control state.
             else:
