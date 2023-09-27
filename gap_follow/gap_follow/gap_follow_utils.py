@@ -171,96 +171,6 @@ def extend_range_value_left(ranges: List[float],
         current_index -= 1
         spaces_to_extend -= 1
 
-# def pad_disparities(ranges: List[float],
-#                     angle_increment_rad: float,
-#                     range_indices: List[int],
-#                     disparity_threshold_m: float,
-#                     car_width_m: float) -> None:
-#     """Finds disparities in ranges array and "pads them" with the smaller value
-#     of the disparity such that the resulting gaps in the ranges array are known
-#     to be passable.
-
-#     Args:
-#         ranges (List[float]): Array of range values from LaserScan.
-#         angle_increment_rad (float): Angle increment )in radians) between each
-#         LiDAR range value.
-#         range_indices (List[int]): The beginning and ending indices of the
-#         portion of ranges that disparities should be padded in.
-#         disparity_threshold_m (float): The minimum distance between two
-#         consecutive/contiguous range values for their difference to be
-#         considered a disparity.
-#         car_width_m (float): The width of the car in meters.
-#     """
-
-#     start_index = range_indices[0]
-#     stop_index = range_indices[-1]
-#     # Iterate through each pair of values in the ranges array. Evaluate whether
-#     # or not each pair is a disparity or not.
-#     for left in range(start_index, stop_index - 2):
-#         right = left + 1
-
-#         left_range = ranges[left]
-#         right_range = ranges[right]
-        
-#         disparity = get_disparity(a=left_range,
-#                                   b=right_range,
-#                                   disparity_threshold_m=disparity_threshold_m)
-
-#         if disparity == DisparityDirection.RIGHT:
-
-#             print(f"Found RIGHT disparity: {left_range}, {right_range}")
-#             # Compute the number of indices/spaces to extend based on the
-#             # car width and the range (==depth==distance) the shorter value
-#             # that disparity occurs at.
-#             approx_desired_arc = 0.5*car_width_m
-#             num_ranges = num_ranges_in_arclength(arc_length_m=approx_desired_arc,
-#                                                  arc_radius_m=left_range,
-#                                                  angle_increment_rad=angle_increment_rad)
-            
-#             print(f"Num ranges in arc length at range {left_range}: {num_ranges}")
-#             # The number of indices returned is the total number of indices
-#             # needed to create that arc. Therefore, only extend by num - 1, as
-#             # there is already a value at the starting_index.
-#             print("Ranges before value extension: ")
-#             print(ranges)
-#             extend_range_value_right(ranges=ranges, 
-#                                      starting_index=left,
-#                                      spaces_to_extend=num_ranges - 1)
-
-#             # Okay, problem. Basically, when we do one range extension, we end
-#             # up creating a new disparity further down the line. And if we're
-#             # just extending these one after another, then if we have a gap, for
-#             # example, we'd just keep extending until the whole gap is covered
-#             # over. So this approach doesn't work.
-
-#             # Instead, we really need to go through the array first one time,
-#             # find all the disparities, record their "direction" and which value
-#             # we want extended. Then, have another loop that goes back and
-#             # performs those extensions after the fact.
-            
-#             # Therefore, we should break up this function into two separate
-#             # functions: 
-#             # 1. find_disparities
-#             # 2. pad_disparities
-
-
-        
-#         elif disparity == DisparityDirection.LEFT:
-            
-#             # Compute the number of indices/spaces to extend based on the
-#             # car width and the range (==depth==distance) the shorter value
-#             # that disparity occurs at.
-#             approx_desired_arc = 0.5*car_width_m
-#             num_ranges = num_ranges_in_arclength(arc_length_m=approx_desired_arc,
-#                                                  arc_radius_m=right_range,
-#                                                  angle_increment_rad=angle_increment_rad)
-#             # The number of indices returned is the total number of indices
-#             # needed to create that arc. Therefore, only extend by num - 1, as
-#             # there is already a value at the starting_index.
-#             extend_range_value_left(ranges=ranges,
-#                                     starting_index=right,
-#                                     spaces_to_extend=num_ranges - 1)
-
 @dataclass
 class Disparity:
     left_index: int
@@ -336,17 +246,23 @@ def pad_disparities(ranges: List[float],
             num_ranges = num_ranges_in_arclength(arc_length_m=approx_desired_arc,
                                                  arc_radius_m=disparity.left_index,
                                                  angle_increment_rad=angle_increment_rad)
-            # Then, extend the range at the left index to the right num_ranges times.
-            extend_range_value_right(ranges=ranges, starting_index=disparity.left_index, spaces_to_extend=num_ranges)
+            # Then, extend the range at the left index to the right num_ranges
+            # times.
+            extend_range_value_right(ranges=ranges, 
+                                     range_indices=range_indices,
+                                     starting_index=disparity.left_index,
+                                     spaces_to_extend=num_ranges)
 
         elif disparity.direction == DisparityDirection.LEFT:
             # If disparity direction was LEFT, then compute the number of range
             # values (index values) that can comprise the desired arc.
             approx_desired_arc = 0.5*car_width_m
             num_ranges = num_ranges_in_arclength(arc_length_m=approx_desired_arc,
-                                                 arc_radius_m=disparity.left_index,
+                                                 arc_radius_m=disparity.right_index,
                                                  angle_increment_rad=angle_increment_rad)
             # Then, extend the range at the right index to the left num_ranges times.
-            extend_range_value_left(ranges=ranges, starting_index=disparity.right_index, spaces_to_extend=num_ranges)
-
+            extend_range_value_left(ranges=ranges,
+                                    range_indices=range_indices,
+                                    starting_index=disparity.right_index,
+                                    spaces_to_extend=num_ranges)
     return
