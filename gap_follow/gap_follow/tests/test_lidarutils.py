@@ -41,5 +41,37 @@ class TestClipRangeValues(unittest.TestCase):
         expected_result = [1.5, 1.5, 1.5, 1.5, 1.5]
         self.assertEqual(ranges, expected_result)
 
+class TestGetIndexFromAngle(unittest.TestCase):
+    """   "lidar_angle_min_rad": -2.3499999046325684,
+            "lidar_angle_max_rad": 2.3499999046325684,
+            "lidar_angle_increment_rad": 0.004351851996034384,
+            "lidar_num_ranges": 1080
+
+    Args:
+        unittest (_type_): _description_
+    """
+    def test_valid_angle(self):
+        angle_rad = 0.0
+        angle_increment_rad = 0.004351851996034384
+        angle_min_rad = -2.3499999046325684
+        angle_max_rad = 2.3499999046325684
+        num_ranges = 1080
+        expected_index = 539
+
+        result = get_index_from_angle(angle_rad, angle_increment_rad, angle_min_rad, angle_max_rad, num_ranges)
+
+        self.assertEqual(result, expected_index)
+
+    def test_angle_out_of_range(self):
+        angle_rad = 3.14
+        angle_increment_rad = 0.004351851996034384
+        angle_min_rad = -2.3499999046325684
+        angle_max_rad = 2.3499999046325684
+        num_ranges = 1080
+        expected_index = 539
+
+        with self.assertRaises(Exception):
+            get_index_from_angle(angle_rad, angle_increment_rad, angle_min_rad, angle_max_rad, num_ranges)
+
 if __name__ == "__main__":
     unittest.main()

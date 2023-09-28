@@ -11,8 +11,8 @@ from std_msgs.msg import String
 from rcl_interfaces.msg import SetParametersResult
 from threading import Lock
 
-import lidarutils as lu
-import gap_follow_utils as gf
+import gap_follow.lidarutils as lu
+import gap_follow.gap_follow_utils as gf
 
 class FollowGapState(Enum):
     INIT = 1
@@ -79,12 +79,14 @@ class ReactiveFollowGap(Node):
         num_ranges = self.__get_local_parameter("lidar_num_ranges")
         gap_scan_angle_range_rad = math.radians(self.__get_local_parameter("gap_scan_angle_range_deg"))
         # Get lower left side index range.
+        # TODO: Don't use the whole IndexRange type--just immediately get a list
+        # of index values as a list of integers!!!
         self.__left_start_angle_rad = gap_scan_angle_range_rad
         self.__left_end_angle_rad = self.__get_local_parameter("lidar_angle_max_rad")
         self.__left_side_index_range: lu.IndexRange = lu.get_index_range_from_angles(start_angle_rad=self.__left_start_angle_rad,
                                                                                end_angle_rad=self.__left_end_angle_rad,
                                                                                angle_min_rad=angle_min,
-                                                                               angle_max=angle_max,
+                                                                               angle_max_rad=angle_max,
                                                                                angle_increment_rad=angle_increment,
                                                                                num_ranges=num_ranges)
         # Get lower right side index range.
@@ -93,7 +95,7 @@ class ReactiveFollowGap(Node):
         self.__right_side_index_range: lu.IndexRange = lu.get_index_range_from_angles(start_angle_rad=self.__right_start_angle_rad,
                                                                                 end_angle_rad=self.__right_end_angle_rad,
                                                                                 angle_min_rad=angle_min,
-                                                                                angle_max=angle_max,
+                                                                                angle_max_rad=angle_max,
                                                                                 angle_increment_rad=angle_increment,
                                                                                 num_ranges=num_ranges)
         # Get the (main) middle index range.
@@ -256,6 +258,7 @@ class ReactiveFollowGap(Node):
         equal to its previous value, and publishes the Ackermann message to
         /drive.
         """
+        self.get_logger().warning(f"Going to hit wall apparently! Steering straight!")
         new_steering_angle = 0.0
         # TODO: In case the speed is too high in these scenarios, add an
         # instance variable that stores the last followed gap depth, and
@@ -265,7 +268,7 @@ class ReactiveFollowGap(Node):
         new_speed = self.__last_drive_message.drive.speed
         # Then, use the drive publisher to publish the ackermann steering
         # message with these values.
-        self.publish_control(new_steering_angle=new_steering_angle, new_velocity=new_speed)
+        self.publish_control(new_steering_angle=new_steering_angle, new_speed=new_speed)
         return
     
     def __disparity_control_state(self, ranges: List[float]) -> None:
@@ -276,6 +279,7 @@ class ReactiveFollowGap(Node):
         # Before doing anything else, grab the working range of indices. I.e.,
         # all range values except for those on the side.
         range_indices = self.__middle_index_range.get_indices()
+        self.get_logger().info(f"Range Indices For Middle: \n{range_indices}")
 
         # 1. (TODO) Clamp all range values to maximum depth value. Choosing not
         #    to implement this first, just to see what performance is like
@@ -293,6 +297,7 @@ class ReactiveFollowGap(Node):
         angle_increment_rad = self.__get_local_parameter("lidar_angle_increment_rad")
         gf.pad_disparities(ranges=ranges, 
                            range_indices=range_indices,
+                           disparities=disparities,
                            car_width_m=self.__car_width_m,
                            angle_increment_rad=angle_increment_rad)
         # NOTE: steps 2 and 3 could probably be combined into a single function.
@@ -317,7 +322,8 @@ class ReactiveFollowGap(Node):
         # better way of doing it.
         if len(gaps) == 0:
             self.get_logger().warning(f"Car couldn't find any gaps--stopping for now!")
-            self.publish_control(new_steering_angle=0.0, new_velocity=0.0)
+            self.get_logger().warning(f"Range subset with no gaps:\n{ranges[range_indices[0]:range_indices[-1]]}")
+            self.publish_control(new_steering_angle=0.0, new_speed=0.0)
             return
         
         # 5. If there is at least one gap returned, call a function to get the

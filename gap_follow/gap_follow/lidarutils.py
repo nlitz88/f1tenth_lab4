@@ -25,42 +25,93 @@ def angle_in_range(angle_rad: float, angle_min_rad: float, angle_max_rad: float)
         return False
     return True
 
+# def get_index_from_angle(angle_rad: float, 
+#                          angle_min_rad: float, 
+#                          angle_max_rad: float,
+#                          angle_increment_rad: float, 
+#                          num_ranges: int) -> int:
+#     """Returns the approximate index in the laser_scan's ranges array that
+#     corresponds to the provided angle.
+
+#     Args:
+#         angle_rad (float): Angle (in radians) to get index of in ranges array.
+#         angle_min_rad (float): The minimum (smallest) angle measured by the
+#         LiDAR from the scan at hand.
+#         angle_max_rad (float): The maximum (most positive) angle measured by the
+#         LiDAR from the scan at hand.
+#         angle_increment_rad (float): The increment (in radians) between each
+#         range within the LiDAR scan's ranges array.
+#         num_ranges (int): The length of the ranges array from the LaserScan
+#         message. I.e., the number of range measurements.
+
+#     Returns:
+#         int: The index in the ranges array corresponding to the provided angle.
+#     """
+#     # 1. First, check to make sure the angle provided is within the boundaries
+#     #    of the laser scan itself.
+#     if not angle_in_range(angle_rad=angle_rad, angle_min_rad=angle_min_rad, angle_max_rad=angle_max_rad):
+#         raise Exception(f"Provided angle {angle_rad:.4f} ({math.degrees(angle_rad):.4f}) is outside of the range within the provided laserscan message: [{angle_min_rad:.4f} : {angle_max_rad:.4f}]")
+#     # 2. Multiply the provided angle by the provided angle_increment.
+#     unadjusted_angle_index = angle_rad*angle_increment_rad
+#     # 3. Add half the number of indicies in our ranges array to the unadjusted
+#     #    index.
+#     middle_index = int(np.floor(num_ranges / 2))
+#     adjusted_angle_index = unadjusted_angle_index + middle_index
+#     min_index = 0
+#     max_index = num_ranges - 1
+#     angle_index = np.clip(a=adjusted_angle_index, a_min=min_index, a_max=max_index)
+#     return int(angle_index)
+
 def get_index_from_angle(angle_rad: float, 
-                         angle_min_rad: float, 
-                         angle_max_rad: float,
                          angle_increment_rad: float, 
+                         angle_min_rad: float,
+                         angle_max_rad: float,
                          num_ranges: int) -> int:
-    """Returns the approximate index in the laser_scan's ranges array that
-    corresponds to the provided angle.
+    """Returns index in ranges array that corresponds to an angle measured from
+    the x-axis of the LiDAR frame.
 
     Args:
-        angle_rad (float): Angle (in radians) to get index of in ranges array.
-        angle_min_rad (float): The minimum (smallest) angle measured by the
-        LiDAR from the scan at hand.
-        angle_max_rad (float): The maximum (most positive) angle measured by the
-        LiDAR from the scan at hand.
-        angle_increment_rad (float): The increment (in radians) between each
-        range within the LiDAR scan's ranges array.
-        num_ranges (int): The length of the ranges array from the LaserScan
-        message. I.e., the number of range measurements.
+        angle_rad (float): Angle (in radians) as measured from the x-axis of the
+        LiDAR frame.
+        angle_increment_rad (float): The angle between each LiDAR range in a
+        scan.
+        angle_min_rad (float): The minimum (most negative, lowest) angle
+        a range measurement is taken by the LiDAR.
+        angle_max_rad (float): The maximum (most positive, highest) angle
+        a range measurement is taken by the LiDAR.
+        num_ranges (int): The number of entries in a scan message's ranges
+        array.
+
+    Raises:
+        Exception: Throws an exception if the provided angle is outside of range
+        of angles measured by the LiDAR.
 
     Returns:
-        int: The index in the ranges array corresponding to the provided angle.
+        int: The approximate index in the LaserScan ranges array that
+        corresponds to the provided angle.
     """
-    # 1. First, check to make sure the angle provided is within the boundaries
-    #    of the laser scan itself.
     if not angle_in_range(angle_rad=angle_rad, angle_min_rad=angle_min_rad, angle_max_rad=angle_max_rad):
         raise Exception(f"Provided angle {angle_rad:.4f} ({math.degrees(angle_rad):.4f}) is outside of the range within the provided laserscan message: [{angle_min_rad:.4f} : {angle_max_rad:.4f}]")
-    # 2. Multiply the provided angle by the provided angle_increment.
-    unadjusted_angle_index = angle_rad*angle_increment_rad
-    # 3. Add half the number of indicies in our ranges array to the unadjusted
-    #    index.
-    middle_index = np.floor(num_ranges / 2)
-    adjusted_angle_index = unadjusted_angle_index + middle_index
-    min_index = 0
-    max_index = num_ranges - 1
-    angle_index = np.clip(a=adjusted_angle_index, a_min=min_index, a_max=max_index)
-    return angle_index
+    adjusted_angle_rad = angle_rad + -angle_min_rad
+    print()
+    print(f"Adjusted angle after adding min_angle: ", adjusted_angle_rad)
+    unclipped_index = math.floor(adjusted_angle_rad/angle_increment_rad)
+    print(f"Unclipped index: {unclipped_index}")
+    min_ranges_index = 0
+    max_ranges_index = num_ranges - 1
+    clipped_index = int(np.clip(unclipped_index, a_min=min_ranges_index, a_max=max_ranges_index))
+    print(f"Clipped index: {clipped_index}")
+    return clipped_index
+
+# To get the index that corresponds to a particular angle:
+"""
+ - Take the angle. It's w.r.t. the LiDAR's x-axis.
+ - So, zero angle is really halfway through the array. negative -2.xx is the
+   zero index.
+ - Well, what we can say is that, if we treat the first index as 0 degrees, that
+   means that zero degrees is +min_angle.
+ - 
+"""
 
 class IndexRange:
     """Dataclass like class dedicated to maintaining the first and last index in
