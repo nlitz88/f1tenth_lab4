@@ -579,5 +579,27 @@ class TestGetGapAverageDepth(unittest.TestCase):
         result = get_gap_average_depth(ranges, gap_left_index, gap_right_index)
         self.assertAlmostEqual(result, 2.0, places=2)
 
+class TestGetGapMiddleIndex(unittest.TestCase):
+    def test_odd_gap_size(self):
+        gap_left_index = 2
+        gap_right_index = 6
+        result = get_gap_middle_index(gap_left_index, gap_right_index)
+        expected = 4
+        self.assertEqual(result, expected)
+
+    def test_even_gap_size(self):
+        gap_left_index = 1
+        gap_right_index = 6
+        result = get_gap_middle_index(gap_left_index, gap_right_index)
+        expected = 3
+        self.assertEqual(result, expected)
+
+    def test_single_element_gap(self):
+        gap_left_index = 3
+        gap_right_index = 3
+        result = get_gap_middle_index(gap_left_index, gap_right_index)
+        expected = 3
+        self.assertEqual(result, expected)
+
 if __name__ == "__main__":
     unittest.main()

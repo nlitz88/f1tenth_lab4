@@ -321,7 +321,9 @@ def get_gap_middle_index(gap_left_index: int, gap_right_index: int) -> int:
         int: The approximate index that sits between gap_left_index and
         gap_right_index. 
     """
-    return 0.0
+    # NOTE: Using floor here, so the middle index when you have an even number
+    # of indices is the rightmost index of the left half.
+    return math.floor((gap_right_index-gap_left_index)/2) + gap_left_index
 
 def get_gap_center_of_mass(ranges: List[float], gap_left_index: int, gap_right_index: int) -> int:
     """Gets the weighted sum of the depths of all the ranges in the gap and
