@@ -61,6 +61,30 @@ class TestGetIndexFromAngle(unittest.TestCase):
         result = get_index_from_angle(angle_rad, angle_increment_rad, angle_min_rad, angle_max_rad, num_ranges)
 
         self.assertEqual(result, expected_index)
+    
+    def test_max_angle(self):
+        angle_rad = 2.3499999046325684
+        angle_increment_rad = 0.004351851996034384
+        angle_min_rad = -2.3499999046325684
+        angle_max_rad = 2.3499999046325684
+        num_ranges = 1080
+        expected_index = 1079
+
+        result = get_index_from_angle(angle_rad, angle_increment_rad, angle_min_rad, angle_max_rad, num_ranges)
+
+        self.assertEqual(result, expected_index)
+    
+    def test_min_angle(self):
+        angle_rad = -2.3499999046325684
+        angle_increment_rad = 0.004351851996034384
+        angle_min_rad = -2.3499999046325684
+        angle_max_rad = 2.3499999046325684
+        num_ranges = 1080
+        expected_index = 0
+
+        result = get_index_from_angle(angle_rad, angle_increment_rad, angle_min_rad, angle_max_rad, num_ranges)
+
+        self.assertEqual(result, expected_index)
 
     def test_angle_out_of_range(self):
         angle_rad = 3.14

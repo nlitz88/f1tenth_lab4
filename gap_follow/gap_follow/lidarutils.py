@@ -93,14 +93,10 @@ def get_index_from_angle(angle_rad: float,
     if not angle_in_range(angle_rad=angle_rad, angle_min_rad=angle_min_rad, angle_max_rad=angle_max_rad):
         raise Exception(f"Provided angle {angle_rad:.4f} ({math.degrees(angle_rad):.4f}) is outside of the range within the provided laserscan message: [{angle_min_rad:.4f} : {angle_max_rad:.4f}]")
     adjusted_angle_rad = angle_rad + -angle_min_rad
-    print()
-    print(f"Adjusted angle after adding min_angle: ", adjusted_angle_rad)
     unclipped_index = math.floor(adjusted_angle_rad/angle_increment_rad)
-    print(f"Unclipped index: {unclipped_index}")
     min_ranges_index = 0
     max_ranges_index = num_ranges - 1
     clipped_index = int(np.clip(unclipped_index, a_min=min_ranges_index, a_max=max_ranges_index))
-    print(f"Clipped index: {clipped_index}")
     return clipped_index
 
 # To get the index that corresponds to a particular angle:
