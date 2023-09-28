@@ -274,31 +274,73 @@ class Gap:
     max_depth: float
     average_depth: float
     middle_index: int
-    weighted_middle_index: int
+    center_of_mass: int
 
-def gap_max_depth(ranges: List[float], gap_left_index: int, gap_right_index: int) -> float:
-    pass
+def get_gap_max_depth(ranges: List[float], gap_left_index: int, gap_right_index: int) -> float:
+    return 0.0
 
 def get_gap_average_depth(ranges: List[float], gap_left_index: int, gap_right_index: int) -> float:
-    pass
+    return 0.0
 
 def get_gap_middle_index(gap_left_index: int, gap_right_index: int) -> int:
-    pass
+    return 0.0
 
 def get_gap_center_of_mass(ranges: List[float], gap_left_index: int, gap_right_index: int) -> int:
-    pass
+    return 0.0
 
-def find_gaps(ranges: List[float], range_indices: List[int], gap_distance_threshold_m: float):
+# def find_gaps(ranges: List[float], range_indices: List[int], gap_distance_threshold_m: float):
 
-    # Grab the starting and ending indices from the range_indices. Not sure if
-    # we actually need these yet.
-    start = range_indices[0]
-    end = range_indices[-1]
+#     # Grab the starting and ending indices from the range_indices. Not sure if
+#     # we actually need these yet.
+#     gap_left_index = None
+#     gap_right_index = None
+#     gap_started = False
 
-    for index in range_indices:
-        pass
+#     class FindGapState(Enum):
+#         NO_GAP=1
+#         GAP_STARTED=2
+#         GAP_ENDED=3
+#         GAP_STARTED_AT_END=4
+#         FINISHED=5
+#     current_state = FindGapState.NO_GAP
 
-        # Check to see if the range at index is the beginning of a new gap!
+#     start = range_indices[0]
+#     end = range_indices[-1]
+#     current_index = start
+#     while current_state != FindGapState.FINISHED:
+
+#         if find_gap_state == FindGapState.NO_GAP:
+
+#             # Transition into gap started if the current range value >=
+#             # threshold.
+#             if ranges[current_index] >= gap_distance_threshold_m:
+#                 find_gap_state = FindGapState.GAP_STARTED
+        
+#         elif find_gap_state == FindGapState.GAP_STARTED:
+
+#             # Store the current index as the left index.
+#             gap_left_index = current_index
+#             # Then increment the current index.
+#             current_index += 1
+            
+#             # If current value is also above the threshold, then stay in the
+#             # GAP_STARTED state.
+#             if ranges[current_index] >= gap_distance_threshold_m:
+#                 find_gap_state = FindGapState.GAP_STARTED
+#             else:
+#                 find_gap_state = FindGapState.GAP_ENDED
+
+#         elif find_gap_state == FindGapState.GAP_ENDED:
+            
+#             # Unconditional transition into the NO_GAP state from find_gap_state.
+#             if True:
+#                 find_gap_state = FindGapState.NO_GAP
+
+#         pass
+
+#         # Check to see if the range at index is the beginning of a new gap!
+#         if ranges[index] >= gap_distance_threshold_m:
+#             gap_left_index = index
 
         # How do we find a gap? Well, it'll likely have to be some sort of
         # nested for loop type beat.
@@ -327,3 +369,84 @@ def find_gaps(ranges: List[float], range_indices: List[int], gap_distance_thresh
         # AGAIN: this is generic functionality, so it's worth getting right
         # whether I use this with the disparities or not!!! As, no matter the
         # preprocessing present (or lackthereof), this should work!
+
+# def find_gaps(ranges: List[float], range_indices: List[int], gap_depth_threshold_m: float):
+
+#     # Grab the starting and ending indices from the range_indices. Not sure if
+#     # we actually need these yet.
+#     gap_left_index = None
+#     gap_right_index = None
+#     gap_started = False
+
+#     for index in range_indices:
+
+#         # If a gap has already been started, check to see if the next value is
+#         # also above the threshold, in which case we'd advance the right index.
+#         if gap_started:
+#             # If it's above the threshold, we'll just move the right index over
+#             # one. 
+#             if ranges[index] >= gap_depth_threshold_m:
+#                 gap_right_index = index
+#             # If it's not, that means the gap we were looking at has ended, and
+#             # therefore it's time to end the current gap.
+#             else:
+                
+#                 # Create new gap object.
+            
+#         # If we're not already in a gap, see if the current range value is deep
+#         # enough to be considered the start of a new gap.
+#         else:
+#             if ranges[index] >= gap_depth_threshold_m:
+#                 gap_left_index = index
+#                 gap_right_index = index
+#                 gap_started = True
+
+def find_gaps_naive(ranges: List[float], range_indices: List[int], gap_distance_threshold_m: float) -> List[Gap]:
+
+    # List of gaps to be returned.
+    gaps = []
+    # Get staring and ending index.
+    start = range_indices[0]
+    end = range_indices[-1]
+    # Current index variable.
+    current_index = start
+    while current_index <= end:
+
+        # Check if the value at the current index exceeds the gap depth
+        # threshold. If so, a new gap begins at this index. Therefore, invoke
+        # another for loop here that iterates through any following elements to
+        # see if any consecutive ranges are part of this gap.
+        if ranges[current_index] >= gap_distance_threshold_m:
+            
+            # Until we find additional ranges, mark the current index as the
+            # only index belonging to this gap.
+            gap_left_index = current_index
+            gap_right_index = current_index
+            # Increment current_index to explore future gaps. If consecutive
+            # ranges found with range >= threshold, can move gap_right_index
+            # over each time.
+            current_index += 1
+            while current_index <= end:
+                if ranges[current_index] >= gap_distance_threshold_m:
+                    gap_right_index += 1
+                current_index += 1
+            
+            # Once all possible range values belonging to this gap have been
+            # found, call some helper functions to extract higher level
+            # information about the gap, and then create a gap object and add it
+            # to the list of gaps.
+            gap_max_depth = get_gap_max_depth(ranges=ranges, gap_left_index=gap_left_index, gap_right_index=gap_right_index)
+            gap_average_depth = get_gap_average_depth(ranges=ranges, gap_left_index=gap_left_index, gap_right_index=gap_right_index)
+            gap_middle_index = get_gap_middle_index(gap_left_index=gap_left_index, gap_right_index=gap_right_index)
+            gap_center_of_mass = get_gap_center_of_mass(ranges=ranges, gap_left_index=gap_left_index, gap_right_index=gap_right_index)
+            new_gap = Gap(left_index=gap_left_index,
+                          right_index=gap_right_index,
+                          max_depth=gap_max_depth,
+                          average_depth=gap_average_depth,
+                          middle_index=gap_middle_index,
+                          center_of_mass=gap_center_of_mass)
+            gaps.append(new_gap)
+            # NOTE: Don't need to "reset" gap_left_index and gap_right_index, as
+            # they are only in the scope of this if statement, and once we're
+            # done with this gap, they get de-allocated.
+    return gaps

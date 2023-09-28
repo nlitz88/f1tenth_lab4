@@ -35,7 +35,7 @@ class ReactiveFollowGap(Node):
         self.__parameters = {
             "gap_scan_angle_range_deg": 90,
             "side_safety_dist_minimum_m": 0.15,
-            "gap_distance_threshold_m": 2.5, # 3 was in lecture
+            "gap_depth_threshold_m": 2.5, # 3 was in lecture
             "range_upper_bound_m": 3,
             "disparity_threshold_m": 0.3,
             "lidar_angle_min_rad": -2.3499999046325684,
