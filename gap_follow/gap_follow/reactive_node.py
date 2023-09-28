@@ -83,30 +83,30 @@ class ReactiveFollowGap(Node):
         # of index values as a list of integers!!!
         self.__left_start_angle_rad = gap_scan_angle_range_rad
         self.__left_end_angle_rad = self.__get_local_parameter("lidar_angle_max_rad")
-        self.__left_side_index_range: lu.IndexRange = lu.get_index_range_from_angles(start_angle_rad=self.__left_start_angle_rad,
-                                                                               end_angle_rad=self.__left_end_angle_rad,
-                                                                               angle_min_rad=angle_min,
-                                                                               angle_max_rad=angle_max,
-                                                                               angle_increment_rad=angle_increment,
-                                                                               num_ranges=num_ranges)
+        self.__left_side_index_range = lu.get_index_range_from_angles(start_angle_rad=self.__left_start_angle_rad,
+                                                                      end_angle_rad=self.__left_end_angle_rad,
+                                                                      angle_min_rad=angle_min,
+                                                                      angle_max_rad=angle_max,
+                                                                      angle_increment_rad=angle_increment,
+                                                                      num_ranges=num_ranges)
         # Get lower right side index range.
         self.__right_start_angle_rad = self.__get_local_parameter("lidar_angle_min_rad")
         self.__right_end_angle_rad = -gap_scan_angle_range_rad
-        self.__right_side_index_range: lu.IndexRange = lu.get_index_range_from_angles(start_angle_rad=self.__right_start_angle_rad,
-                                                                                end_angle_rad=self.__right_end_angle_rad,
-                                                                                angle_min_rad=angle_min,
-                                                                                angle_max_rad=angle_max,
-                                                                                angle_increment_rad=angle_increment,
-                                                                                num_ranges=num_ranges)
+        self.__right_side_index_range: lu.get_index_range_from_angles(start_angle_rad=self.__right_start_angle_rad,
+                                                                      end_angle_rad=self.__right_end_angle_rad,
+                                                                      angle_min_rad=angle_min,
+                                                                      angle_max_rad=angle_max,
+                                                                      angle_increment_rad=angle_increment,
+                                                                      num_ranges=num_ranges)
         # Get the (main) middle index range.
         self.__middle_start_angle_rad = -gap_scan_angle_range_rad
         self.__middle_end_angle_rad = gap_scan_angle_range_rad
-        self.__middle_index_range: lu.IndexRange = lu.get_index_range_from_angles(start_angle_rad=self.__middle_start_angle_rad,
-                                                                            end_angle_rad=self.__middle_end_angle_rad,
-                                                                            angle_min_rad=angle_min,
-                                                                            angle_max_rad=angle_max,
-                                                                            angle_increment_rad=angle_increment,
-                                                                            num_ranges=num_ranges)
+        self.__middle_index_range = lu.get_index_range_from_angles(start_angle_rad=self.__middle_start_angle_rad,
+                                                                   end_angle_rad=self.__middle_end_angle_rad,
+                                                                   angle_min_rad=angle_min,
+                                                                   angle_max_rad=angle_max,
+                                                                   angle_increment_rad=angle_increment,
+                                                                   num_ranges=num_ranges)
         # NOTE: If I don't want to have to deal with any rounding issues here,
         # could really just set the middle index range to +1 from the last of
         # the left, and -1 from the first of the right. I.e., like:
@@ -222,13 +222,13 @@ class ReactiveFollowGap(Node):
         # sides.
         minimum_distance_threshold = self.__get_local_parameter("side_safety_dist_minimum_m")
         # First, check to see if it's too close to anything on its right side.
-        right_indices = self.__right_side_index_range.get_indices()
+        right_indices = self.__right_side_index_range
         if gf.ranges_under_threshold(ranges=ranges,
                                   range_indices=right_indices,
                                   minimum_distance_m=minimum_distance_threshold):
             return True
         # If the right is fine, check to left to make sure everything is okay.
-        left_indices = self.__left_side_index_range.get_indices()
+        left_indices = self.__left_side_index_range
         if gf.ranges_under_threshold(ranges=ranges,
                                   range_indices=left_indices,
                                   minimum_distance_m=minimum_distance_threshold):
@@ -250,7 +250,7 @@ class ReactiveFollowGap(Node):
             bool: True if the car is bound to collide with an obstacle on one of
             its sides, False if not.
         """
-        return self.__sides_too_close(self) and last_steering_angle_rad != 0
+        return self.__sides_too_close(ranges=ranges) and last_steering_angle_rad != 0
 
     def __moving_straight_state(self) -> None:
         """Wrapper function for all the operations ("side effects") to be
@@ -278,7 +278,7 @@ class ReactiveFollowGap(Node):
 
         # Before doing anything else, grab the working range of indices. I.e.,
         # all range values except for those on the side.
-        range_indices = self.__middle_index_range.get_indices()
+        range_indices = self.__middle_index_range
         self.get_logger().info(f"Range Indices For Middle: \n{range_indices}")
 
         # 1. (TODO) Clamp all range values to maximum depth value. Choosing not
