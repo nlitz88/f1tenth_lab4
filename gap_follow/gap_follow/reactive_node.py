@@ -35,7 +35,7 @@ class ReactiveFollowGap(Node):
         self.__parameters_mutex = Lock()
         self.__parameters = {
             "gap_scan_angle_range_deg": 90,
-            "side_safety_dist_minimum_m": 0.05,
+            "side_safety_dist_minimum_m": 0.40,
             "gap_depth_threshold_m": 2.5, # 3 was in lecture
             "range_upper_bound_m": 3,
             "disparity_threshold_m": 0.3,
@@ -112,7 +112,7 @@ class ReactiveFollowGap(Node):
         # the left, and -1 from the first of the right. I.e., like:
         # self.__middle_index_range = lu.IndexRange(starting_index=self.__right_side_index_range.ending_index,
         #                                        ending_index=self.__left_side_index_range.starting_index)
-        
+
         # State Variable.
         self.__current_state = FollowGapState.INIT
 
@@ -280,8 +280,7 @@ class ReactiveFollowGap(Node):
         # all range values except for those on the side.
         self.get_logger().info("In state disparity control")
         range_indices = self.__middle_index_range
-        self.get_logger().info(f"Range Indices For Middle: \n{range_indices}")
-
+        
         # 1. (TODO) Clamp all range values to maximum depth value. Choosing not
         #    to implement this first, just to see what performance is like
         #    without it.
