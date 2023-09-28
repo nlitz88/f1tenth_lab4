@@ -97,5 +97,23 @@ class TestGetIndexFromAngle(unittest.TestCase):
         with self.assertRaises(Exception):
             get_index_from_angle(angle_rad, angle_increment_rad, angle_min_rad, angle_max_rad, num_ranges)
 
+class TestGetIndexRangeFromAngles(unittest.TestCase):
+
+    def test_valid_range(self):
+        start_angle_rad = -2.3499999046325684
+        end_angle_rad = 0.0
+        angle_increment_rad = 0.004351851996034384
+        angle_min_rad = -2.3499999046325684
+        angle_max_rad = 2.3499999046325684
+        num_ranges = 1080
+        expected_indices = list(range(0, 540))  # Expected indices for the given range
+        result = get_index_range_from_angles(start_angle_rad=start_angle_rad,
+                                             end_angle_rad=end_angle_rad,
+                                             angle_min_rad=angle_min_rad,
+                                             angle_max_rad=angle_max_rad,
+                                             angle_increment_rad=angle_increment_rad,
+                                             num_ranges=num_ranges)
+        self.assertEqual(result, expected_indices)
+
 if __name__ == "__main__":
     unittest.main()
