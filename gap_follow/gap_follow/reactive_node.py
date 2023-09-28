@@ -61,7 +61,6 @@ class ReactiveFollowGap(Node):
         
         # Variable for robot width.
         self.__car_width_m = 0.2032
-        self.__car_width_mutex = Lock()
 
         # Store last drive message.
         self.__last_drive_message = AckermannDriveStamped()
@@ -149,29 +148,6 @@ class ReactiveFollowGap(Node):
                     self.__parameters[param.name] = param.value
                     self.get_logger().info(f"Received updated version of parameter {str(param.name)}, new value {param.value}")
             return SetParametersResult(successful=True)
-
-    def robot_description_callback(self, robot_description: String) -> None:
-        """Callback used upon receiving an updated robot description.
-
-        Args:
-            robot_description (String): Robot description as defined in the
-            robot's URDF file.
-        """
-        # TODO: For now, I'm going to forgo implementing this, as there aren't
-        # any messages being published to the /ego_racecar_description topic
-        with self.__car_width_mutex:
-            # Grab the robot width from the description here.
-            # self.__car_width_m = robot_description
-            pass
-
-    def get_robot_width(self) -> float:
-        """Returns the width of the robot in meters.
-
-        Returns:
-            float: Robot width in meters.
-        """
-        with self.__car_width_mutex:
-            return self.__car_width_m
         
     def publish_control(self, 
                         new_steering_angle: float, 
@@ -225,33 +201,21 @@ class ReactiveFollowGap(Node):
         # Otherwise, it's not too close on either side, return False.
         return False
 
-    def __steer_straight(self):
-        """Simple function that, when invoked, will publish a new drive message
-        with steering angle zero and speed unchanged.
-        """
-        new_steering_angle = 0.0
-        new_speed = self.__last_drive_message.drive.speed
-        self.publish_control(new_steering_angle=new_steering_angle, new_velocity=new_speed)
-    
-    def __preprocess_ranges(self, ranges: List[float]) -> None:
-        """ Preprocess the LiDAR scan array. Expert implementation includes:
-            1.Setting each value to the mean over some window
-            2.Rejecting high values (eg. > 3m)
-        """
-        proc_ranges = ranges
-        return proc_ranges
+    def __going_to_hit_wall(self, ranges: List[float], last_steering_angle_rad: float) -> bool:
+        """Returns whether or not the car is currently bound to hit the wall
+        based on its current distance to obstacles on either of its sides and
+        its current steering angle.
 
-    def find_max_gap(self, free_space_ranges):
-        """ Return the start index & end index of the max gap in free_space_ranges
+        Args:
+            ranges (List[float]): List of range values from LaserScan.
+            last_steering_angle_rad (float): Last steering angle (in radians)
+            published to /drive.
+
+        Returns:
+            bool: True if the car is bound to collide with an obstacle on one of
+            its sides, False if not.
         """
-        return None
-    
-    def find_best_point(self, start_i, end_i, ranges):
-        """Start_i & end_i are start and end indicies of max-gap range, respectively
-        Return index of best point in ranges
-	    Naive: Choose the furthest point within ranges and go there
-        """
-        return None
+        return self.__sides_too_close(self) and last_steering_angle_rad != 0
 
     def __moving_straight_state(self) -> None:
         """Wrapper function for all the operations ("side effects") to be
@@ -341,7 +305,7 @@ class ReactiveFollowGap(Node):
             # TODO: just NOTE that I MAY HAVE TO also add a second guard
             # condition here to check whether our steering angle is nonzero.
             # This comes directly from the slides on disparity based control.
-            if self.__sides_too_close(ranges=ranges):
+            if self.__going_to_hit_wall(ranges=ranges, last_steering_angle_rad=self.__last_drive_message.drive.steering_angle):
                 self.__current_state = FollowGapState.MOVING_STRAIGHT
             # Otherwise, switch back to disparity control state.
             else:
@@ -354,117 +318,16 @@ class ReactiveFollowGap(Node):
 
             # Guard Condition here.
             # If side is still too close, continue moving straight.
-            if self.__sides_too_close(ranges=ranges):
+            if self.__going_to_hit_wall(ranges=ranges, last_steering_angle_rad=self.__last_drive_message.drive.steering_angle):
                 self.__current_state = FollowGapState.MOVING_STRAIGHT
             # Otherwise, remain in disparity control state.
             else:
                 self.__current_state = FollowGapState.DISPARITY_CONTROL
-        
-        # TODO:
-        #Find closest point to LiDAR
-
-        #Eliminate all points inside 'bubble' (set them to zero) 
-
-        #Find max length gap 
-
-        #Find the best point in the gap 
-
-        #Publish Drive message
-
-        # TODO: My take on the steps for implementing FTG with disparity tweak +
-        # wobble decrease tweak.
-
-        # 1. First, establish the range of lidar values that we'll actually use
-        #    (-90 to 90. We'll use the angles further to the side for side
-        #    checking later). Could just pick indices for this (precompute
-        #    these in constructor?). Set variables containing the idices for
-        #    those further side values, as well (in the constructor).
-        # 2. Before any disparity calculation, check for the corner case == are
-        #    we too close too some safety distance to an object on our side AND
-        #    is the LAST STEERING ANGLE we published != 0? If so, set steering
-        #    angle to zero, don't change velocity, and move onto next timestep.
-        # OTHERWISE:
-        # 3. When we get a LaserScan message, looking only at the range we
-        #    computed earlier: scan through for for disparities. How? Need some
-        #    sort of disparity threshold? Compute disparity from one point to
-        #    the next by taking abs(difference). If greater, then have to extend
-        #    based on sign of difference. If diff negative, we extend the
-        #    earlier (lower index) value to greater indices. If positive, then
-        #    we extend the higher index value to lower indices. The amount we
-        #    extend each by is == 1/2 width of car? (Make this another tunable
-        #    parameter). Basically, you have to extend to the number of indices
-        #    (angles) that, at the given distance, sum up to the 1/2 car width.
-        #    I.e., circumference depnds on how far away you are! (radius).
-        # 4. Once we have effectively generated only the feasible gaps using
-        #    disparity + extension, choose the gap containing the greatest
-        #    depth. Maybe as a step before this, we should generate a list /
-        #    array of gap tuples, and then sort them by increasing distance
-        #    (logn with heapify?). OR, just search through each gap and keep
-        #    track of the largest.
-        # 5. Choose the gap with the greatest depth. Choose the steering angle
-        #    that corresponds to the middle of that gap. That will be the next
-        #    published steering angle.
-        # 6* Rahul says to limit/clamp all distance measurements to some maximum
-        # value (like 3m or something) to mitigate the wobbling. However, prof
-        # dolan made a point that, we're thinking that you shouldn't need to set
-        # this maximum, but instead to just choose the gap with the greatest
-        # depth, and then just follow the center of that gap. Maybe you get
-        # better performance if you set the limit, but I'll try it without that
-        # first. The beauty is, if I need to add that later, that's a numpy
-        # one-liner with boolean-indexing!
-
-        # Before steering based on disparities in LiDAR readings, first check if
-        # the car is getting too close to a wall or obstacles on either side. If
-        # so, stop turning and steer straight so that we don't turn too early
-        # and hit the wall.
-        if self.__side_too_close(laser_scan=laser_scan):
-            self.get_logger().warning(f"Car got too close to object on its side--steering straight to avoid collision due to early turn!")
-            self.__steer_straight()
-            return
-        
-        # Otherwise, look for disparities in LiDAR data and steer according to
-        # gaps found after adjusting based on disparities. Use one or multiple
-        # helper functions to implement this.
-
-        # First, need to preprocess the ranges we receive.
-
-        # How do I want to handle these arrays? The pythonic way would be to
-        # just have functions that use the class variables and return smaller
-        # lists that are subsets of the actual whole ranges list. That's
-        # cool--but that's not how we'd do it in C++, and doesn't seem very
-        # "robotics friendly."
-
-        # To start, we want to find the disparities--but we only want to look
-        # for them in the middle range. I.e., from -90 --> +90. How would we do
-        # this in C++?
-
-        # We wouldn't create a new array--we would just start and stop indexing
-        # from the start and stop index for the middle range.
-        
-        # Okay, so maybe the one remaining question is: where do we get those
-        # ranges? Do we grab them here and pass them into the functions here? Or
-        # do I write another function like "__disparity_control" that returns
-        # steering angle and velocity (which we then publish), and that function
-        # is the one that access those range values?
-
-        # OR, do we treat this as a sort of state-driven function, where, we
-        # first run the check for whether or not we're too close--and that
-        # produces a steering angle and velocity--or we run the disparity-based
-        # control, and that produces a steering angle and velocity. I.e., 
-
-        # 1. Take middle range and look for indices where disparities occur?
-        # 2. For each of those disparities, based on the "direction" of the
-        #    disparity, within the middle ranges array, take the shorter range
-        #    of the two that comprise the disparity and extend that range by n
-        #    indices, where n is computed based on the number of angles needed
-        #    to "produce" the 1/2width of the car at that shorter range
-        #    (circumference calculation).
-        processed_ranges = self.__preprocess_ranges(ranges=ranges)
 
 
 def main(args=None):
     rclpy.init(args=args)
-    print("WallFollow Initialized")
+    print("GapFollow Initialized")
     reactive_node = ReactiveFollowGap()
     rclpy.spin(reactive_node)
 
