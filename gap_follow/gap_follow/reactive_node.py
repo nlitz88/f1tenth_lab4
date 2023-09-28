@@ -11,13 +11,14 @@ from std_msgs.msg import String
 from rcl_interfaces.msg import SetParametersResult
 from threading import Lock
 
-from lidarutils import IndexRange, get_index_range_from_angles
-from gap_follow_utils import ranges_under_threshold
+import lidarutils as lu
+import gap_follow_utils as gf
 
 class FollowGapState(Enum):
     INIT = 1
     MOVING_STRAIGHT = 2
     DISPARITY_CONTROL = 3
+    # STUCK=4
 
 class ReactiveFollowGap(Node):
     """
@@ -80,7 +81,7 @@ class ReactiveFollowGap(Node):
         # Get lower left side index range.
         self.__left_start_angle_rad = gap_scan_angle_range_rad
         self.__left_end_angle_rad = self.__get_local_parameter("lidar_angle_max_rad")
-        self.__left_side_index_range: IndexRange = get_index_range_from_angles(start_angle_rad=self.__left_start_angle_rad,
+        self.__left_side_index_range: lu.IndexRange = lu.get_index_range_from_angles(start_angle_rad=self.__left_start_angle_rad,
                                                                                end_angle_rad=self.__left_end_angle_rad,
                                                                                angle_min_rad=angle_min,
                                                                                angle_max=angle_max,
@@ -89,7 +90,7 @@ class ReactiveFollowGap(Node):
         # Get lower right side index range.
         self.__right_start_angle_rad = self.__get_local_parameter("lidar_angle_min_rad")
         self.__right_end_angle_rad = -gap_scan_angle_range_rad
-        self.__right_side_index_range: IndexRange = get_index_range_from_angles(start_angle_rad=self.__right_start_angle_rad,
+        self.__right_side_index_range: lu.IndexRange = lu.get_index_range_from_angles(start_angle_rad=self.__right_start_angle_rad,
                                                                                 end_angle_rad=self.__right_end_angle_rad,
                                                                                 angle_min_rad=angle_min,
                                                                                 angle_max=angle_max,
@@ -98,7 +99,7 @@ class ReactiveFollowGap(Node):
         # Get the (main) middle index range.
         self.__middle_start_angle_rad = -gap_scan_angle_range_rad
         self.__middle_end_angle_rad = gap_scan_angle_range_rad
-        self.__middle_index_range: IndexRange = get_index_range_from_angles(start_angle_rad=self.__middle_start_angle_rad,
+        self.__middle_index_range: lu.IndexRange = lu.get_index_range_from_angles(start_angle_rad=self.__middle_start_angle_rad,
                                                                             end_angle_rad=self.__middle_end_angle_rad,
                                                                             angle_min_rad=angle_min,
                                                                             angle_max_rad=angle_max,
@@ -107,7 +108,7 @@ class ReactiveFollowGap(Node):
         # NOTE: If I don't want to have to deal with any rounding issues here,
         # could really just set the middle index range to +1 from the last of
         # the left, and -1 from the first of the right. I.e., like:
-        # self.__middle_index_range = IndexRange(starting_index=self.__right_side_index_range.ending_index,
+        # self.__middle_index_range = lu.IndexRange(starting_index=self.__right_side_index_range.ending_index,
         #                                        ending_index=self.__left_side_index_range.starting_index)
         
         # State Variable.
@@ -188,13 +189,13 @@ class ReactiveFollowGap(Node):
         minimum_distance_threshold = self.__get_local_parameter("side_safety_dist_minimum_m")
         # First, check to see if it's too close to anything on its right side.
         right_indices = self.__right_side_index_range.get_indices()
-        if ranges_under_threshold(ranges=ranges,
+        if gf.ranges_under_threshold(ranges=ranges,
                                   range_indices=right_indices,
                                   minimum_distance_m=minimum_distance_threshold):
             return True
         # If the right is fine, check to left to make sure everything is okay.
         left_indices = self.__left_side_index_range.get_indices()
-        if ranges_under_threshold(ranges=ranges,
+        if gf.ranges_under_threshold(ranges=ranges,
                                   range_indices=left_indices,
                                   minimum_distance_m=minimum_distance_threshold):
             return True
@@ -250,32 +251,67 @@ class ReactiveFollowGap(Node):
 
         # 2. Next, find all the index pairs in the ranges array where there is a
         #    disparity that exceeds the disparity threshold.
-        
+        disparity_threshold_m = self.__get_local_parameter("disparity_threshold_m")
+        disparities = gf.find_disparities(ranges=ranges,
+                                          range_indices=range_indices,
+                                          disparity_threshold_m=disparity_threshold_m)
 
         # 3. Then, extend each disparity according to the width of the car and
         #    the depth (range) at which that disparity occurs.
+        angle_increment_rad = self.__get_local_parameter("lidar_angle_increment_rad")
+        gf.pad_disparities(ranges=ranges, 
+                           range_indices=range_indices,
+                           car_width_m=self.__car_width_m,
+                           angle_increment_rad=angle_increment_rad)
         # NOTE: steps 2 and 3 could probably be combined into a single function.
         # However, probably more testable and easier to understand if they're
         # separate for now.
 
-        # 4. Then, write function for that finds the start and end index of each
-        #    gap in the range. Can find the max depth of each gap as well, and
-        #    return them in sorted order (using something like heapify?).
-        #    Probably break this step up internally into two smaller steps.
+        # 4. Once the ranges array has been processed (padding locations where
+        #    there is sufficient disparity, in the above case), we can now use a
+        #    function to go into the updated ranges and find all the gaps.
+        gap_depth_threshold_m = self.__get_local_parameter("gap_depth_threshold_m")
+        gaps = gf.find_gaps(ranges=ranges,
+                            range_indices=range_indices,
+                            gap_depth_threshold_m=gap_depth_threshold_m)
 
         # NOTE: MAKE SURE TO CHECK FOR WHEN FIND_GAPS DOESN'T RETURN ANY
         # GAPS--NEED SOME SORT OF OTHER STATE TO DROP INTO OR SOME RECOURSE
         # PLAN! MAYBE MAKE A BLOCKED STATE OR SOMETHING LIKE THAT?
+        # NOTE: Past this point, this condition should really be used as a guard
+        # condition which controls whether the state machine goes into one of
+        # two states: 1.) disparity_control_with_gaps and 2.)
+        # disparity_control_no_gaps. For now, this is fine--but know there's a
+        # better way of doing it.
+        if len(gaps) == 0:
+            self.get_logger().warning(f"Car couldn't find any gaps--stopping for now!")
+            self.publish_control(new_steering_angle=0.0, new_velocity=0.0)
+            return
+        
+        # 5. If there is at least one gap returned, call a function to get the
+        #    gap with the greatest depth.
+        gap, depth = gf.get_max_depth_gap(gaps=gaps, ranges=ranges)
 
-        # 5. Then, call a function that gets the middle of the selected gap.
-        #    I.e., returns the index of the middle of that gap. Can call the
-        #    lidarutils function that gets an angle from that index and returns
-        #    that.
+        # 6. Then, call a function that gets the middle of the selected gap.
+        #    I.e., returns the index of the middle of that gap.
+        gap_middle_index = gf.get_gap_middle_index(gap_left_index=gap.left_index,
+                                                   gap_right_index=gap.right_index)
+
+        # 7. Finally, to get the steering angle that corresponds to the middle
+        #    of the gape, use the lidar utils function to get the angle that
+        #    corresponds to the index in the middle of the gap.
+        angle_min_rad = self.__get_local_parameter("lidar_angle_min_rad")
+        gap_middle_angle = lu.get_angle_from_index(gap_middle_index, 
+                                                   angle_increment_rad=angle_increment_rad,
+                                                   angle_min_rad=angle_min_rad)
+        # Use the angle to this gap's middle as our new steering angle.
+        new_steering_angle = gap_middle_angle
 
         # 6. Finally, call a separate function that computes velocity as a
         #    function of the depth of the selected gap. Could also use a
         #    simplified version of this function for now that just uses constant
         #    speed, or could also base it on steering angle.
+        
 
         # 7. Finally, call function to publish newly computed steering angle and
         #    speed.
@@ -305,6 +341,8 @@ class ReactiveFollowGap(Node):
             # TODO: just NOTE that I MAY HAVE TO also add a second guard
             # condition here to check whether our steering angle is nonzero.
             # This comes directly from the slides on disparity based control.
+            # NOTE: AlSO--if this side collision condition starts causing
+            # problems, give it a try without it.
             if self.__going_to_hit_wall(ranges=ranges, last_steering_angle_rad=self.__last_drive_message.drive.steering_angle):
                 self.__current_state = FollowGapState.MOVING_STRAIGHT
             # Otherwise, switch back to disparity control state.

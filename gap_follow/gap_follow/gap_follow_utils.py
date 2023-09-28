@@ -341,16 +341,16 @@ def get_gap_center_of_mass(ranges: List[float], gap_left_index: int, gap_right_i
     """
     return 0.0
 
-def find_gaps(ranges: List[float], range_indices: List[int], gap_distance_threshold_m: float) -> List[Gap]:
+def find_gaps(ranges: List[float], range_indices: List[int], gap_depth_threshold_m: float) -> List[Gap]:
     """Returns a list of all the gaps foudn in the provided ranges array within
     the provided range_indices. This function simply finds beginning and end
-    indices for consecutive ranges that are >= gap_distance_threshold.
+    indices for consecutive ranges that are >= gap_depth_threshold_m.
 
     Args:
         ranges (List[float]): List of ranges from LaserScan.
         range_indices (List[int]): Subset of the indices of the ranges array
         that find_gaps will look for gaps in.
-        gap_distance_threshold_m (float): The minimum distance (in meters) a
+        gap_depth_threshold_m (float): The minimum distance (in meters) a
         range must be in order for it to be considered part of a gap.
 
     Returns:
@@ -373,7 +373,7 @@ def find_gaps(ranges: List[float], range_indices: List[int], gap_distance_thresh
         # threshold. If so, a new gap begins at this index. Therefore, invoke
         # another for loop here that iterates through any following elements to
         # see if any consecutive ranges are part of this gap.
-        if ranges[current_index] >= gap_distance_threshold_m:
+        if ranges[current_index] >= gap_depth_threshold_m:
             
             # Until we find additional ranges, mark the current index as the
             # only index belonging to this gap.
@@ -386,7 +386,7 @@ def find_gaps(ranges: List[float], range_indices: List[int], gap_distance_thresh
             # Maintain a flag to track whether the gap end has been reached.
             gap_done = False
             while current_index <= end and not gap_done:
-                if ranges[current_index] >= gap_distance_threshold_m:
+                if ranges[current_index] >= gap_depth_threshold_m:
                     gap_right_index += 1
                 else:
                     gap_done = True
