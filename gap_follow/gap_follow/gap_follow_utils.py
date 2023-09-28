@@ -292,7 +292,11 @@ def get_gap_max_depth(ranges: List[float], gap_left_index: int, gap_right_index:
         float: The maximum range value found in the subset of ranges
         [gap_left_index:gap_right_index].
     """
-    return 0.0
+    max = 0
+    for i in range(gap_left_index, gap_right_index+1):
+        if ranges[i] > max:
+            max = ranges[i]
+    return max
 
 def get_gap_average_depth(ranges: List[float], gap_left_index: int, gap_right_index: int) -> float:
     """Gets the average depth found in the ranges array between the provided
