@@ -36,8 +36,8 @@ class ReactiveFollowGap(Node):
         self.__parameters = {
             "gap_scan_angle_range_deg": 90,
             "side_safety_dist_minimum_m": 0.50,
-            "moving_straight_safety_timeout": 80,
-            "gap_depth_threshold_m": 2.5, # 3 was in lecture
+            "moving_straight_safety_timeout": 60,
+            "gap_depth_threshold_m": 1.5, # Lower speed, lower gap threshold. TODO Should calculate dynamically with current speed.
             "range_upper_bound_m": 3,
             "disparity_threshold_m": 0.3,
             "lidar_angle_min_rad": -2.3499999046325684,
@@ -65,6 +65,10 @@ class ReactiveFollowGap(Node):
         self.__car_width_m = 0.2032
 
         # Store last drive message.
+        # TODO: add some sort of interface functions needed to get/set this!
+        # Right now, you can modify/access it from anywhere in the node and I'm
+        # already worried that it's going to get modified without me realizing
+        # it!
         self.__last_drive_message = AckermannDriveStamped()
 
         # TODO: Call functions or add code here to initialize values that can be
@@ -204,6 +208,8 @@ class ReactiveFollowGap(Node):
             longitudinal_velocity = 0.5
         return longitudinal_velocity
     
+    # TODO: Move this function (and the above function) into gap_follow_utils.
+    # Doesn't really need to be part of the node class itself.
     def speed_from_gap_max_depth(self, 
                                  gap_max_depth: float,
                                  max_speed: float,
