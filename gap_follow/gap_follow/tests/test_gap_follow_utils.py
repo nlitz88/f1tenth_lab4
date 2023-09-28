@@ -376,6 +376,25 @@ class TestPadDisparities(unittest.TestCase):
     # def test_pad_multi_mixed_disparity_2(self):
     #     pass
 
+class TestFindGaps(unittest.TestCase):
+
+    def test_find_gaps(self):
+        # Define your test data here, such as ranges and range_indices.
+        ranges = [0.5, 0.8, 1.2, 3.0, 0.9, 0.4, 2.5]
+        range_indices = [0, 1, 2, 3, 4, 5, 6]
+        gap_distance_threshold_m = 1.0
+
+        # Call the function you want to test
+        gaps = find_gaps(ranges, range_indices, gap_distance_threshold_m)
+
+        # Assert the expected results
+        expected_gaps = [
+            Gap(left_index=2, right_index=3),
+            Gap(left_index=6, right_index=6)
+        ]
+        
+        self.assertEqual(gaps, expected_gaps)
+
 
 
 if __name__ == "__main__":

@@ -271,6 +271,9 @@ def pad_disparities(ranges: List[float],
 class Gap:
     left_index: int
     right_index: int
+
+@dataclass
+class ExtendedGap(Gap):
     max_depth: float
     average_depth: float
     middle_index: int
@@ -401,9 +404,11 @@ def get_gap_center_of_mass(ranges: List[float], gap_left_index: int, gap_right_i
 #                 gap_right_index = index
 #                 gap_started = True
 
-def find_gaps_naive(ranges: List[float], range_indices: List[int], gap_distance_threshold_m: float) -> List[Gap]:
+def find_gaps(ranges: List[float], range_indices: List[int], gap_distance_threshold_m: float) -> List[Gap]:
 
     # List of gaps to be returned.
+    # TODO: Maintain gaps as a heap to return a list of sorted Gaps? Only
+    # problem is, which value do we sort by?
     gaps = []
     # Get staring and ending index.
     start = range_indices[0]
@@ -426,27 +431,28 @@ def find_gaps_naive(ranges: List[float], range_indices: List[int], gap_distance_
             # ranges found with range >= threshold, can move gap_right_index
             # over each time.
             current_index += 1
-            while current_index <= end:
+            # Maintain a flag to track whether the gap end has been reached.
+            gap_done = False
+            while current_index <= end and not gap_done:
                 if ranges[current_index] >= gap_distance_threshold_m:
                     gap_right_index += 1
+                else:
+                    gap_done = True
+                # In either case, increment the current index to move onto the
+                # next range value in the array.
                 current_index += 1
-            
+                
             # Once all possible range values belonging to this gap have been
-            # found, call some helper functions to extract higher level
-            # information about the gap, and then create a gap object and add it
-            # to the list of gaps.
-            gap_max_depth = get_gap_max_depth(ranges=ranges, gap_left_index=gap_left_index, gap_right_index=gap_right_index)
-            gap_average_depth = get_gap_average_depth(ranges=ranges, gap_left_index=gap_left_index, gap_right_index=gap_right_index)
-            gap_middle_index = get_gap_middle_index(gap_left_index=gap_left_index, gap_right_index=gap_right_index)
-            gap_center_of_mass = get_gap_center_of_mass(ranges=ranges, gap_left_index=gap_left_index, gap_right_index=gap_right_index)
-            new_gap = Gap(left_index=gap_left_index,
-                          right_index=gap_right_index,
-                          max_depth=gap_max_depth,
-                          average_depth=gap_average_depth,
-                          middle_index=gap_middle_index,
-                          center_of_mass=gap_center_of_mass)
+            # found, create a gap object and add it to the list of gaps.
+            new_gap = Gap(left_index=gap_left_index, right_index=gap_right_index)
             gaps.append(new_gap)
             # NOTE: Don't need to "reset" gap_left_index and gap_right_index, as
             # they are only in the scope of this if statement, and once we're
             # done with this gap, they get de-allocated.
+        
+        # Otherwise, if the range at the current position isn't part of a gap,
+        # then just increment the current_index.
+        else:
+            current_index += 1
+
     return gaps
