@@ -458,16 +458,64 @@ class TestFindGaps(unittest.TestCase):
         self.assertEqual(gaps, expected_gaps)
 
     def test_one_large_gap_in_subrange(self):
-        pass
+        ranges = [0.3, 1.2, 1.0, 1.1, 1.2, 0.9902, 0.4]
+        range_indices = [1, 2, 3, 4]
+        gap_distance_threshold_m = 1.0
 
-    def test_gap_beginning_to_middle(self):
-        pass
+        # Call the function you want to test
+        gaps = find_gaps(ranges, range_indices, gap_distance_threshold_m)
 
-    def test_gap_middle_to_end(self):
-        pass
+        # Assert the expected results
+        expected_gaps = [
+            Gap(left_index=1, right_index=4)
+        ]
+        
+        self.assertEqual(gaps, expected_gaps)
 
-    def test_multiple_gaps_2(self):
-        pass
+    def test_gap_beginning_to_middle_in_subrange(self):
+        ranges = [0.3, 1.2, 1.0, 0.2, 0.92, 0.9902, 0.4]
+        range_indices = [1, 2, 3, 4]
+        gap_distance_threshold_m = 1.0
+
+        # Call the function you want to test
+        gaps = find_gaps(ranges, range_indices, gap_distance_threshold_m)
+
+        # Assert the expected results
+        expected_gaps = [
+            Gap(left_index=1, right_index=2)
+        ]
+        
+        self.assertEqual(gaps, expected_gaps)
+
+    def test_gap_middle_to_end_in_subrange(self):
+        ranges = [0.3, 0.3, 0.4, 1.2, 1.92, 0.9902, 0.4]
+        range_indices = [1, 2, 3, 4]
+        gap_distance_threshold_m = 1.0
+
+        # Call the function you want to test
+        gaps = find_gaps(ranges, range_indices, gap_distance_threshold_m)
+
+        # Assert the expected results
+        expected_gaps = [
+            Gap(left_index=3, right_index=4)
+        ]
+        
+        self.assertEqual(gaps, expected_gaps)
+
+    def test_multiple_gaps_2_in_subrange(self):
+        ranges = [1.1, 1.2, 1.0, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 2.4, 2.4, 2.3, 2.6, 2.5, 2.4, 2.4, 2.3, 2.6, 2.5, 2.4, 2.4, 2.3, 2.6, 2.5]
+        range_indices = list(range(5, len(ranges)-5))
+        gap_distance_threshold_m = 2.0
+
+        # Call the function you want to test
+        gaps = find_gaps(ranges, range_indices, gap_distance_threshold_m)
+
+        # Assert the expected results
+        expected_gaps = [
+            Gap(left_index=26, right_index=35)
+        ]
+        
+        self.assertEqual(gaps, expected_gaps)
 
 
 
