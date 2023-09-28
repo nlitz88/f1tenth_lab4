@@ -35,9 +35,9 @@ class ReactiveFollowGap(Node):
         self.__parameters_mutex = Lock()
         self.__parameters = {
             "gap_scan_angle_range_deg": 90,
-            "side_safety_dist_minimum_m": 0.50,
-            "moving_straight_safety_timeout": 60,
-            "gap_depth_threshold_m": 1.5, # Lower speed, lower gap threshold. TODO Should calculate dynamically with current speed.
+            "side_safety_dist_minimum_m": 0.2,
+            "moving_straight_safety_timeout": 20,
+            "gap_depth_threshold_m": 1.4, # Lower speed, lower gap threshold. TODO Should calculate dynamically with current speed.
             "range_upper_bound_m": 3,
             "disparity_threshold_m": 0.3,
             "lidar_angle_min_rad": -2.3499999046325684,
@@ -63,6 +63,12 @@ class ReactiveFollowGap(Node):
         
         # Variable for robot width.
         self.__car_width_m = 0.2032
+        # TODO:
+        # Added this "fudge factor" for it to be able to pad disparities a tiny
+        # bit less and get through tight gaps--but more risky! On a safe
+        # car--we've stick with the width strictly, but willing to take some
+        # risk here. Might be able to use a smaller fudge factor, too--I just
+        # jumped up to subtracting half its width!
 
         # Store last drive message.
         # TODO: add some sort of interface functions needed to get/set this!
@@ -198,15 +204,34 @@ class ReactiveFollowGap(Node):
         :return: The "recommended" longitudinal velocity (in m/s). 
         :rtype: float
         """
+        # return 0.6
         steering_angle_deg = math.degrees(steering_angle)
         longitudinal_velocity = 0
         if steering_angle_deg <= 10:
-            longitudinal_velocity = 1.5
-        elif steering_angle_deg <= 20:
             longitudinal_velocity = 1.0
-        else:
+        elif steering_angle_deg <= 20:
             longitudinal_velocity = 0.5
+        else:
+            longitudinal_velocity = 0.35
         return longitudinal_velocity
+
+    # TODO: Move this to gap_follow_utils.
+    # def speed_from_selected_gap_max_depth(self, gap_max_depth) -> float:
+    #     # Right now, only really doing proportional control.
+    #     return gap_max_depth
+
+
+    def get_gap_depth_threshold_from_speed(self, current_speed: float) -> float:
+        # Implementing as piecewise function for now, as speed is also
+        # piecewise.
+        # if current_speed >= 0.6:
+        #     return 1.6
+        # if current_speed >= 0.55:
+        #     return 1.55
+        # if current_speed >= 0.5:
+        #     return 1.5
+        # if current_speed >= 
+        return current_speed*1.7
     
     # TODO: Move this function (and the above function) into gap_follow_utils.
     # Doesn't really need to be part of the node class itself.
@@ -307,6 +332,12 @@ class ReactiveFollowGap(Node):
                                           range_indices=range_indices,
                                           disparity_threshold_m=disparity_threshold_m)
 
+        # TODO: Call a function here that takes the found disparities and
+        # removes/filters out those whose minimum range is ABOVE the gap_depth
+        # threshold--as we don't need to worry about padding/extending those
+        # disparities just yet. In fact, they really just act like an obstacle
+        # we don't even know if we'll need to avoid yet.
+
         # 3. Then, extend each disparity according to the width of the car and
         #    the depth (range) at which that disparity occurs.
         angle_increment_rad = self.__get_local_parameter("lidar_angle_increment_rad")
@@ -322,7 +353,10 @@ class ReactiveFollowGap(Node):
         # 4. Once the ranges array has been processed (padding locations where
         #    there is sufficient disparity, in the above case), we can now use a
         #    function to go into the updated ranges and find all the gaps.
-        gap_depth_threshold_m = self.__get_local_parameter("gap_depth_threshold_m")
+        # gap_depth_threshold_m =
+        # self.__get_local_parameter("gap_depth_threshold_m")
+        # TODO: Temporarily testing dynamic gap depth threshold based on speed.
+        gap_depth_threshold_m = self.get_gap_depth_threshold_from_speed(self.__last_drive_message.drive.speed)
         gaps = gf.find_gaps(ranges=ranges,
                             range_indices=range_indices,
                             gap_depth_threshold_m=gap_depth_threshold_m)
@@ -337,7 +371,8 @@ class ReactiveFollowGap(Node):
         # better way of doing it.
         if len(gaps) == 0:
             self.get_logger().warning(f"Car couldn't find any gaps--stopping for now!")
-            self.get_logger().warning(f"Range subset with no gaps:\n{ranges[range_indices[0]:range_indices[-1]]}")
+            # self.get_logger().warning(f"Range subset with no gaps:\n{ranges[range_indices[0]:range_indices[-1]]}")
+            self.get_logger().warning(f"Largest gap depth in available range: {max(ranges[range_indices[0]:range_indices[-1]]):.6f} meters.")
             self.publish_control(new_steering_angle=0.0, new_speed=0.0)
             return
         

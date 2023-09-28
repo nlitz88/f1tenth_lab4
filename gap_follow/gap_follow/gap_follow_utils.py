@@ -215,6 +215,16 @@ def find_disparities(ranges: List[float],
                         b=right_range, 
                         disparity_threshold_m=disparity_threshold_m):
             disparity_direction = get_disparity_direction(a=left_range, b=right_range)
+            # TEMPORARY LOGIC TO FILTER OUT DISPARITIES WHOSE CLOSEST RANGE IS
+            # LESS THAN SOME THRESHOLD. If used long term, this would be in its
+            # own function--not in here (unless desired to be implemented
+            # here--but not as good of design). For now, I think it could make
+            # sense for this threshold to be the same as the gap_depth
+            # threshold--as if a range is beyond that depth, don't really about
+            # extending it yet. The only disparity walls we care about are those
+            # that we are too close to and have to find a way through!
+            # min_range = min(left_range, right_range)
+            # if not (min_range > 1.8):
             disparities.append(Disparity(left_index=left, right_index=right, direction=disparity_direction))
     return disparities
 
