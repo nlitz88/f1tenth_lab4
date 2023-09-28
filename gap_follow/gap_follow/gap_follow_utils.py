@@ -290,29 +290,40 @@ def get_gap_center_of_mass(ranges: List[float], gap_left_index: int, gap_right_i
 
 def find_gaps(ranges: List[float], range_indices: List[int], gap_distance_threshold_m: float):
 
-    # Question: Shouldn't the minimum number of consecutive ranges with value >=
-    # threshold be dependent on the current distance to them?
+    # Grab the starting and ending indices from the range_indices. Not sure if
+    # we actually need these yet.
+    start = range_indices[0]
+    end = range_indices[-1]
 
-    # That is, this minimum number should correspond with the minimum number
-    # required for our car to fit through. HOWEVER: after performing disparity
-    # padding (or boundary padding in tweak 2), you really shouldn't even have
-    # to do this, as ANY GAP (any consecutive range value >= threshold) should
-    # be wide enough for the car to fit through (as we padded each
-    # disparity/edge) with enough with for half our car, meaning that any
-    # opening should be able to fit our car through.
+    for index in range_indices:
+        pass
 
-    # Therefore, for the sake of keeping things generalizable, I'm wondering if
-    # I should FIRST just make a generic version of this function that just
-    # finds ALL gaps. I.e., all groups of consecutive range values (including
-    # lone range values) will all be considered gaps.
+        # Check to see if the range at index is the beginning of a new gap!
 
-    # THEN--depending on your implementation, perhaps calling this (after doing
-    # preprocessing like we're trying to do) is enough--and the list of gaps
-    # that is returned is the final say.
+        # How do we find a gap? Well, it'll likely have to be some sort of
+        # nested for loop type beat.
 
-    # BUT, for other implementations where preprocessing isn't done (like in the
-    # naive example, for instance), Perhaps then you could add a SEPARATE,
-    # additional filtering stage or function that takes those gaps and decides
-    # if they're really valid/passable.
-    pass
+        # I.e., outer for loop searches for ranges whose depth >= some
+        # threshold.
 
+        # ACTUALLY: I think we can do this easily in O(n).
+        # Loop through each range. If the range is >= to the threshold, then
+        # you've found the start of a gap. Set gap_left_index = current index.
+        # Not sure yet how far the gap goes to the right, so set gap_right_index
+        # to the current index as well right now.
+        # Then, see how far the gap goes. For the next item, if it's over the
+        # threshold and the left_index is already set, then we move over
+        # gap_right_index by one.
+        # NOTE: could design a mini state machien within this that has two
+        # states: building gap and looking_for_new_gap, or something like that.
+
+        # Basically, once we come across a value that isn't >= threshold, then
+        # we close whatever gap we're on. 
+
+        # Using that gap's left and right index, compute whatever other values
+        # you want, instantiate a new gap instance using those values, and
+        # append it to a list of gaps.
+
+        # AGAIN: this is generic functionality, so it's worth getting right
+        # whether I use this with the disparities or not!!! As, no matter the
+        # preprocessing present (or lackthereof), this should work!
