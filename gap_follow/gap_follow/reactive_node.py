@@ -35,7 +35,8 @@ class ReactiveFollowGap(Node):
         self.__parameters_mutex = Lock()
         self.__parameters = {
             "gap_scan_angle_range_deg": 90,
-            "side_safety_dist_minimum_m": 0.40,
+            "side_safety_dist_minimum_m": 0.50,
+            "moving_straight_safety_timeout": 80,
             "gap_depth_threshold_m": 2.5, # 3 was in lecture
             "range_upper_bound_m": 3,
             "disparity_threshold_m": 0.3,
@@ -116,6 +117,9 @@ class ReactiveFollowGap(Node):
         # State Variable.
         self.__current_state = FollowGapState.INIT
 
+        # TODO: Figure out a better way to implement this.
+        self.__moving_straight_timer = 0
+
     def __get_local_parameter(self, param_name: str) -> Any:
         """Function to get the value of a parameter from the parameter
         dictionary maintained locally by the node.
@@ -170,6 +174,8 @@ class ReactiveFollowGap(Node):
         drive_message = AckermannDriveStamped()
         drive_message.drive.steering_angle = new_steering_angle
         drive_message.drive.speed = new_speed
+        # Store this latest drive message.
+        self.__last_drive_message = drive_message
         # Publish the populated message to the drive topic.
         self.__drive_publisher.publish(drive_message)
         return
@@ -268,6 +274,11 @@ class ReactiveFollowGap(Node):
         new_speed = self.__last_drive_message.drive.speed
         # Then, use the drive publisher to publish the ackermann steering
         # message with these values.
+        # NOTE: Problem is that we set the steering angle zero, but then on the
+        # next callback invocation, it doesn't stay in safety mode. Need some
+        # sort of counter or something to stay in this state for a certain
+        # period of time.
+
         self.publish_control(new_steering_angle=new_steering_angle, new_speed=new_speed)
         return
     
@@ -280,7 +291,7 @@ class ReactiveFollowGap(Node):
         # all range values except for those on the side.
         self.get_logger().info("In state disparity control")
         range_indices = self.__middle_index_range
-        
+
         # 1. (TODO) Clamp all range values to maximum depth value. Choosing not
         #    to implement this first, just to see what performance is like
         #    without it.
@@ -374,6 +385,11 @@ class ReactiveFollowGap(Node):
             # steering angle to 0 and make speed unchanged.
             self.__moving_straight_state()
 
+            if self.__moving_straight_timer == 0:
+                self.__moving_straight_timer = self.__get_local_parameter("moving_straight_safety_timeout")
+            else:
+                self.__moving_straight_timer -= 1
+
             # Guard condition here.
             # If side is still too close, continue moving straight.
             # TODO: just NOTE that I MAY HAVE TO also add a second guard
@@ -381,7 +397,9 @@ class ReactiveFollowGap(Node):
             # This comes directly from the slides on disparity based control.
             # NOTE: AlSO--if this side collision condition starts causing
             # problems, give it a try without it.
-            if self.__going_to_hit_wall(ranges=ranges, last_steering_angle_rad=self.__last_drive_message.drive.steering_angle):
+            if self.__moving_straight_timer > 0:
+                self.__current_state = FollowGapState.MOVING_STRAIGHT
+            elif self.__going_to_hit_wall(ranges=ranges, last_steering_angle_rad=self.__last_drive_message.drive.steering_angle):
                 self.__current_state = FollowGapState.MOVING_STRAIGHT
             # Otherwise, switch back to disparity control state.
             else:
