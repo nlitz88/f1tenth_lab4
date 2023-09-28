@@ -299,6 +299,10 @@ class ReactiveFollowGap(Node):
         #    return them in sorted order (using something like heapify?).
         #    Probably break this step up internally into two smaller steps.
 
+        # NOTE: MAKE SURE TO CHECK FOR WHEN FIND_GAPS DOESN'T RETURN ANY
+        # GAPS--NEED SOME SORT OF OTHER STATE TO DROP INTO OR SOME RECOURSE
+        # PLAN! MAYBE MAKE A BLOCKED STATE OR SOMETHING LIKE THAT?
+
         # 5. Then, call a function that gets the middle of the selected gap.
         #    I.e., returns the index of the middle of that gap. Can call the
         #    lidarutils function that gets an angle from that index and returns

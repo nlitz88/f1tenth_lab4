@@ -601,5 +601,30 @@ class TestGetGapMiddleIndex(unittest.TestCase):
         expected = 3
         self.assertEqual(result, expected)
 
+class TestGetMaxDepthGap(unittest.TestCase):
+    def test_single_gap_with_max_depth(self):
+        gaps = [Gap(left_index=1, right_index=4)]  # A single gap
+        ranges = [1.0, 2.0, 3.0, 4.0, 3.0, 2.0, 1.0]
+        result = get_max_depth_gap(gaps, ranges)
+        expected_gap = Gap(left_index=1, right_index=4)
+        expected_depth = 4.0
+        self.assertEqual(result, (expected_gap, expected_depth))
+
+    def test_multiple_gaps_with_max_depth(self):
+        gaps = [Gap(left_index=0, right_index=2), Gap(left_index=4, right_index=6)]
+        ranges = [3.0, 2.0, 4.0, 1.0, 2.0, 4.0, 3.0]
+        result = get_max_depth_gap(gaps, ranges)
+        expected_gap = Gap(left_index=0, right_index=2)
+        expected_depth = 4.0
+        self.assertEqual(result, (expected_gap, expected_depth))
+
+    def test_no_gaps(self):
+        gaps = []  # No gaps in the list
+        ranges = [1.0, 2.0, 3.0, 4.0, 3.0, 2.0, 1.0]
+        result = get_max_depth_gap(gaps, ranges)
+        expected_gap = None
+        expected_depth = 0.0
+        self.assertEqual(result, (expected_gap, expected_depth))
+
 if __name__ == "__main__":
     unittest.main()

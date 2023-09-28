@@ -5,7 +5,7 @@ gap_follow node.
 from dataclasses import dataclass
 from enum import Enum
 import math
-from typing import List
+from typing import List, Tuple
 
 def num_ranges_in_arclength(arc_length_m: float,
                             arc_radius_m: float,
@@ -359,8 +359,8 @@ def find_gaps(ranges: List[float], range_indices: List[int], gap_distance_thresh
     """
 
     # List of gaps to be returned.
-    # TODO: Maintain gaps as a heap to return a list of sorted Gaps? Only
-    # problem is, which value do we sort by?
+    # NOTE: BE WEARY OF WHEN THIS FUNCTION RETURNS AN EMPTY LIST. Make there is
+    # logic to handle that in the calling functions!
     gaps = []
     # Get staring and ending index.
     start = range_indices[0]
@@ -408,3 +408,30 @@ def find_gaps(ranges: List[float], range_indices: List[int], gap_distance_thresh
             current_index += 1
 
     return gaps
+
+def get_max_depth_gap(gaps: List[Gap], ranges: List[float]) -> Tuple[Gap, float]:
+    """Finds the gap in the provided list of gaps with the greatest depth and
+    returns it, along with that depth value.
+
+    Args:
+        gaps (List[Gap]): List of Gap objects.
+        ranges (List[float]): List of ranges from LaserScan.
+
+    Returns:
+        Tuple[Gap, float]: The Gap instance with the greatest depth and that
+        greatest depth value.
+    """
+    # TODO: What kind of tiebreaker could be good to introduce here in case two
+    # gaps have the same max depth? Maybe which gap has the greater width or
+    # greater average depth? Probably won't happen all that often. This is also
+    # making me thing that maybe taking some weighted some of the max depth,
+    # width, and average depth could be a better metric for ranking the possible
+    # gaps to take. That could also be learned over time.
+    max_gap = None
+    max_depth = 0
+    for gap in gaps:
+        gap_max_depth = get_gap_max_depth(ranges=ranges, gap_left_index=gap.left_index, gap_right_index=gap.right_index)
+        if gap_max_depth > max_depth:
+            max_gap = gap
+            max_depth = gap_max_depth
+    return (max_gap, max_depth)
