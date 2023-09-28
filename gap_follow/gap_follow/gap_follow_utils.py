@@ -266,3 +266,53 @@ def pad_disparities(ranges: List[float],
                                     starting_index=disparity.right_index,
                                     spaces_to_extend=num_ranges)
     return
+
+@dataclass
+class Gap:
+    left_index: int
+    right_index: int
+    max_depth: float
+    average_depth: float
+    middle_index: int
+    weighted_middle_index: int
+
+def gap_max_depth(ranges: List[float], gap_left_index: int, gap_right_index: int) -> float:
+    pass
+
+def get_gap_average_depth(ranges: List[float], gap_left_index: int, gap_right_index: int) -> float:
+    pass
+
+def get_gap_middle_index(gap_left_index: int, gap_right_index: int) -> int:
+    pass
+
+def get_gap_center_of_mass(ranges: List[float], gap_left_index: int, gap_right_index: int) -> int:
+    pass
+
+def find_gaps(ranges: List[float], range_indices: List[int], gap_distance_threshold_m: float):
+
+    # Question: Shouldn't the minimum number of consecutive ranges with value >=
+    # threshold be dependent on the current distance to them?
+
+    # That is, this minimum number should correspond with the minimum number
+    # required for our car to fit through. HOWEVER: after performing disparity
+    # padding (or boundary padding in tweak 2), you really shouldn't even have
+    # to do this, as ANY GAP (any consecutive range value >= threshold) should
+    # be wide enough for the car to fit through (as we padded each
+    # disparity/edge) with enough with for half our car, meaning that any
+    # opening should be able to fit our car through.
+
+    # Therefore, for the sake of keeping things generalizable, I'm wondering if
+    # I should FIRST just make a generic version of this function that just
+    # finds ALL gaps. I.e., all groups of consecutive range values (including
+    # lone range values) will all be considered gaps.
+
+    # THEN--depending on your implementation, perhaps calling this (after doing
+    # preprocessing like we're trying to do) is enough--and the list of gaps
+    # that is returned is the final say.
+
+    # BUT, for other implementations where preprocessing isn't done (like in the
+    # naive example, for instance), Perhaps then you could add a SEPARATE,
+    # additional filtering stage or function that takes those gaps and decides
+    # if they're really valid/passable.
+    pass
+
