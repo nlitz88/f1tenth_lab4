@@ -80,8 +80,6 @@ class ReactiveFollowGap(Node):
         num_ranges = self.__get_local_parameter("lidar_num_ranges")
         gap_scan_angle_range_rad = math.radians(self.__get_local_parameter("gap_scan_angle_range_deg"))
         # Get lower left side index range.
-        # TODO: Don't use the whole IndexRange type--just immediately get a list
-        # of index values as a list of integers!!!
         self.__left_start_angle_rad = gap_scan_angle_range_rad
         self.__left_end_angle_rad = self.__get_local_parameter("lidar_angle_max_rad")
         self.__left_side_index_range = lu.get_index_range_from_angles(start_angle_rad=self.__left_start_angle_rad,
