@@ -35,7 +35,7 @@ class ReactiveFollowGap(Node):
         self.__parameters_mutex = Lock()
         self.__parameters = {
             "gap_scan_angle_range_deg": 90,
-            "side_safety_dist_minimum_m": 0.15,
+            "side_safety_dist_minimum_m": 0.05,
             "gap_depth_threshold_m": 2.5, # 3 was in lecture
             "range_upper_bound_m": 3,
             "disparity_threshold_m": 0.3,
@@ -92,7 +92,7 @@ class ReactiveFollowGap(Node):
         # Get lower right side index range.
         self.__right_start_angle_rad = self.__get_local_parameter("lidar_angle_min_rad")
         self.__right_end_angle_rad = -gap_scan_angle_range_rad
-        self.__right_side_index_range: lu.get_index_range_from_angles(start_angle_rad=self.__right_start_angle_rad,
+        self.__right_side_index_range = lu.get_index_range_from_angles(start_angle_rad=self.__right_start_angle_rad,
                                                                       end_angle_rad=self.__right_end_angle_rad,
                                                                       angle_min_rad=angle_min,
                                                                       angle_max_rad=angle_max,
@@ -278,6 +278,7 @@ class ReactiveFollowGap(Node):
 
         # Before doing anything else, grab the working range of indices. I.e.,
         # all range values except for those on the side.
+        self.get_logger().info("In state disparity control")
         range_indices = self.__middle_index_range
         self.get_logger().info(f"Range Indices For Middle: \n{range_indices}")
 
