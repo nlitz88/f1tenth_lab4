@@ -152,25 +152,57 @@ class ReactiveFollowGap(Node):
         
     def publish_control(self, 
                         new_steering_angle: float, 
-                        new_velocity: float) -> None:
+                        new_speed: float) -> None:
         """Helper function that handles publishing the provided steering angle
-        and velocity to the drive topic. Constructs an AckermannDriveStamped
+        and speed to the drive topic. Constructs an AckermannDriveStamped
         message and publishes it to the drive topic.
 
         :param new_steering_angle: The steering angle (in radians) to be
             commanded. 
         :type steering_angle: float
-        :param new_velocity: The velocity (in m/s) to be commanded.
-        :type velocity: float
+        :param new_speed: The new speed (in m/s) to be commanded.
+        :type new_speed: float
         """
-        # Construct new Ackermann drive message, set velocity and steering
+        # Construct new Ackermann drive message, set speed and steering
         # angle.
         drive_message = AckermannDriveStamped()
         drive_message.drive.steering_angle = new_steering_angle
-        drive_message.drive.speed = new_velocity
+        drive_message.drive.speed = new_speed
         # Publish the populated message to the drive topic.
         self.__drive_publisher.publish(drive_message)
         return
+    
+    def velocity_from_steering_angle(self, steering_angle: float) -> float:
+        """Piecewise function that returns a suitable longitudinal velocity
+        given a steering angle. Recommended configuration from lab handout:
+
+        If the steering angle is between 0 degrees and 10 degrees, the car
+        should drive at 1.5 meters per second.
+        If the steering angle is between 10 degrees and 20 degrees, the speed
+        should be 1.0 meters per second.
+        Otherwise, the speed should be 0.5 meters per second.
+
+        :param steering_angle: Steering angle (in radians) as measured from the
+            x-axis of the base link.
+        :type steering_angle: float
+        :return: The "recommended" longitudinal velocity (in m/s). 
+        :rtype: float
+        """
+        steering_angle_deg = math.degrees(steering_angle)
+        longitudinal_velocity = 0
+        if steering_angle_deg <= 10:
+            longitudinal_velocity = 1.5
+        elif steering_angle_deg <= 20:
+            longitudinal_velocity = 1.0
+        else:
+            longitudinal_velocity = 0.5
+        return longitudinal_velocity
+    
+    def speed_from_gap_max_depth(self, 
+                                 gap_max_depth: float,
+                                 max_speed: float,
+                                 min_speed: float) -> float:
+        pass
 
     def __sides_too_close(self, ranges: List[float]) -> bool:
         """Returns whether or not the car is too close to an obstacle on either
@@ -311,11 +343,11 @@ class ReactiveFollowGap(Node):
         #    function of the depth of the selected gap. Could also use a
         #    simplified version of this function for now that just uses constant
         #    speed, or could also base it on steering angle.
-        
+        new_speed = self.velocity_from_steering_angle(steering_angle=new_steering_angle)
 
         # 7. Finally, call function to publish newly computed steering angle and
         #    speed.
-        self.publish_control(new_steering_angle=18239192387123.232, new_velocity=891283213.23)
+        self.publish_control(new_steering_angle=new_steering_angle, new_speed=new_speed)
         return
 
     def __lidar_callback(self, laser_scan: LaserScan):
