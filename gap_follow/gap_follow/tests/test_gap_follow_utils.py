@@ -505,7 +505,7 @@ class TestFindGaps(unittest.TestCase):
     def test_multiple_gaps_2_in_subrange(self):
         ranges = [1.1, 1.2, 1.0, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 2.4, 2.4, 2.3, 2.6, 2.5, 2.4, 2.4, 2.3, 2.6, 2.5, 2.4, 2.4, 2.3, 2.6, 2.5]
         range_indices = list(range(5, len(ranges)-5))
-        gap_distance_threshold_m = 2.0
+        gap_distance_threshold_m = 2.0  
 
         # Call the function you want to test
         gaps = find_gaps(ranges, range_indices, gap_distance_threshold_m)
@@ -516,8 +516,6 @@ class TestFindGaps(unittest.TestCase):
         ]
         
         self.assertEqual(gaps, expected_gaps)
-
-
 
 if __name__ == "__main__":
     unittest.main()
