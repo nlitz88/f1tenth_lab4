@@ -35,8 +35,8 @@ class ReactiveFollowGap(Node):
         self.__parameters_mutex = Lock()
         self.__parameters = {
             "gap_scan_angle_range_deg": 90,
-            "side_safety_dist_minimum_m": 0.2,
-            "moving_straight_safety_timeout": 20,
+            "side_safety_dist_minimum_m": 0.3,
+            "moving_straight_safety_timeout": 5,
             "gap_depth_threshold_m": 1.4, # Lower speed, lower gap threshold. TODO Should calculate dynamically with current speed.
             "range_upper_bound_m": 3,
             "disparity_threshold_m": 0.3,
@@ -208,11 +208,11 @@ class ReactiveFollowGap(Node):
         steering_angle_deg = math.degrees(steering_angle)
         longitudinal_velocity = 0
         if steering_angle_deg <= 10:
-            longitudinal_velocity = 1.0
+            longitudinal_velocity = 0.95
         elif steering_angle_deg <= 20:
-            longitudinal_velocity = 0.5
+            longitudinal_velocity = 0.75
         else:
-            longitudinal_velocity = 0.35
+            longitudinal_velocity = 0.5
         return longitudinal_velocity
 
     # TODO: Move this to gap_follow_utils.
@@ -224,14 +224,22 @@ class ReactiveFollowGap(Node):
     def get_gap_depth_threshold_from_speed(self, current_speed: float) -> float:
         # Implementing as piecewise function for now, as speed is also
         # piecewise.
-        # if current_speed >= 0.6:
-        #     return 1.6
-        # if current_speed >= 0.55:
-        #     return 1.55
-        # if current_speed >= 0.5:
+        # if current_speed < 0.5:
+        #     return 1.0
+        # if current_speed < 0.6:
+        #     return 1.3
+        # if current_speed < 1.0:
         #     return 1.5
-        # if current_speed >= 
-        return current_speed*1.7
+        # return 2.0
+
+        # if current_speed < 0.5:
+        #     return current_speed*3
+        # if current_speed < 0.75:
+        #     return current_speed*2
+        # if current_speed < 1.0:
+        #     return current_speed*2
+        # return 1.5*math.sqrt(current_speed)
+        return float(np.clip(math.log10(100*current_speed + 1)/1.2, a_min=0.2, a_max=4.0))
     
     # TODO: Move this function (and the above function) into gap_follow_utils.
     # Doesn't really need to be part of the node class itself.
@@ -239,7 +247,7 @@ class ReactiveFollowGap(Node):
                                  gap_max_depth: float,
                                  max_speed: float,
                                  min_speed: float) -> float:
-        pass
+        return float(np.clip(math.log10(10*gap_max_depth+1)/2.2, min_speed, max_speed))
 
     def __sides_too_close(self, ranges: List[float]) -> bool:
         """Returns whether or not the car is too close to an obstacle on either
@@ -399,7 +407,9 @@ class ReactiveFollowGap(Node):
         #    function of the depth of the selected gap. Could also use a
         #    simplified version of this function for now that just uses constant
         #    speed, or could also base it on steering angle.
-        new_speed = self.velocity_from_steering_angle(steering_angle=new_steering_angle)
+        # new_speed =
+        # self.velocity_from_steering_angle(steering_angle=new_steering_angle)
+        new_speed = self.speed_from_gap_max_depth(gap_max_depth=depth, max_speed=1.2, min_speed=0.3)
 
         # 7. Finally, call function to publish newly computed steering angle and
         #    speed.
