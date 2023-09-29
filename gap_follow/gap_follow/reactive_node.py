@@ -35,9 +35,9 @@ class ReactiveFollowGap(Node):
         self.__parameters_mutex = Lock()
         self.__parameters = {
             "gap_scan_angle_range_deg": 90,
-            "side_safety_dist_minimum_m": 0.50,
-            "moving_straight_safety_timeout": 60,
-            "gap_depth_threshold_m": 1.5, # Lower speed, lower gap threshold. TODO Should calculate dynamically with current speed.
+            "side_safety_dist_minimum_m": 0.25,
+            "moving_straight_safety_timeout": 30,
+            "gap_depth_threshold_m": 1.6, # Lower speed, lower gap threshold. TODO Should calculate dynamically with current speed.
             "range_upper_bound_m": 3,
             "disparity_threshold_m": 0.3,
             "lidar_angle_min_rad": -2.3499999046325684,
@@ -201,11 +201,11 @@ class ReactiveFollowGap(Node):
         steering_angle_deg = math.degrees(steering_angle)
         longitudinal_velocity = 0
         if steering_angle_deg <= 10:
-            longitudinal_velocity = 1.5
-        elif steering_angle_deg <= 20:
             longitudinal_velocity = 1.0
+        elif steering_angle_deg <= 20:
+            longitudinal_velocity = 0.8
         else:
-            longitudinal_velocity = 0.5
+            longitudinal_velocity = 0.6
         return longitudinal_velocity
     
     # TODO: Move this function (and the above function) into gap_follow_utils.
@@ -337,8 +337,10 @@ class ReactiveFollowGap(Node):
         # better way of doing it.
         if len(gaps) == 0:
             self.get_logger().warning(f"Car couldn't find any gaps--stopping for now!")
-            self.get_logger().warning(f"Range subset with no gaps:\n{ranges[range_indices[0]:range_indices[-1]]}")
-            self.publish_control(new_steering_angle=0.0, new_speed=0.0)
+            # self.get_logger().warning(f"Range subset with no
+            # gaps:\n{ranges[range_indices[0]:range_indices[-1]]}")
+            self.get_logger().warning(f"Max depth found in ranges == {max(ranges[range_indices[0]:range_indices[-1]])}")
+            self.publish_control(new_steering_angle=0.0, new_speed=0.1)
             return
         
         # 5. If there is at least one gap returned, call a function to get the
