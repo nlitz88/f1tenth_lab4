@@ -268,7 +268,7 @@ class ReactiveFollowGap(Node):
                                  gap_max_depth: float,
                                  max_speed: float,
                                  min_speed: float) -> float:
-        return float(np.clip(math.log10(10*gap_max_depth+1)/2.2, min_speed, max_speed))
+        return float(np.clip(math.log10(10*gap_max_depth+1)/0.5, min_speed, max_speed))
 
     def __sides_too_close(self, ranges: List[float]) -> bool:
         """Returns whether or not the car is too close to an obstacle on either
@@ -431,7 +431,9 @@ class ReactiveFollowGap(Node):
         #    speed, or could also base it on steering angle.
         # new_speed =
         # self.velocity_from_steering_angle(steering_angle=new_steering_angle)
-        new_speed = self.speed_from_gap_max_depth(gap_max_depth=depth, max_speed=2.5, min_speed=0.3)
+        # new_speed = self.speed_from_gap_max_depth(gap_max_depth=depth,
+        # max_speed=2.5, min_speed=0.3)
+        new_speed = self.speed_from_gap_max_depth(gap_max_depth=depth, max_speed=4.0, min_speed=0.3)
 
         # 7. Finally, call function to publish newly computed steering angle and
         #    speed.
