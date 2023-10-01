@@ -36,8 +36,8 @@ class ReactiveFollowGap(Node):
         self.__parameters = {
             "gap_scan_angle_range_deg": 90,
             "side_safety_dist_minimum_m": 0.25,
-            "moving_straight_safety_timeout": 30,
-            "gap_depth_threshold_m": 1.6, # Lower speed, lower gap threshold. TODO Should calculate dynamically with current speed.
+            "moving_straight_safety_timeout": 60,
+            "gap_depth_threshold_m": 1.4, # Lower speed, lower gap threshold. TODO Should calculate dynamically with current speed.
             "range_upper_bound_m": 3,
             "disparity_threshold_m": 0.3,
             "lidar_angle_min_rad": -2.3499999046325684,
@@ -201,11 +201,11 @@ class ReactiveFollowGap(Node):
         steering_angle_deg = math.degrees(steering_angle)
         longitudinal_velocity = 0
         if steering_angle_deg <= 10:
-            longitudinal_velocity = 1.0
+            longitudinal_velocity = 0.7
         elif steering_angle_deg <= 20:
-            longitudinal_velocity = 0.8
+            longitudinal_velocity = 0.3
         else:
-            longitudinal_velocity = 0.6
+            longitudinal_velocity = 0.2
         return longitudinal_velocity
     
     # TODO: Move this function (and the above function) into gap_follow_utils.
@@ -299,6 +299,7 @@ class ReactiveFollowGap(Node):
         # 1. (TODO) Clamp all range values to maximum depth value. Choosing not
         #    to implement this first, just to see what performance is like
         #    without it.
+        lu.clip_range_values(ranges=ranges, min=0.0, max=2.5)
 
         # 2. Next, find all the index pairs in the ranges array where there is a
         #    disparity that exceeds the disparity threshold.
@@ -351,12 +352,24 @@ class ReactiveFollowGap(Node):
         #    I.e., returns the index of the middle of that gap.
         gap_middle_index = gf.get_gap_middle_index(gap_left_index=gap.left_index,
                                                    gap_right_index=gap.right_index)
+        
+        # TEMPORARY TEST: Get index of the max depth range in this gap and try
+        # steering to that instead.
+        def get_deepest_index(ranges, gap_left_index, gap_right_index):
+            max_val = ranges[gap_left_index]
+            max_idx = gap_left_index
+            for i in range(gap_left_index+1, gap_right_index+1):
+                if ranges[i] > max_val:
+                    max_val = ranges[i]
+                    max_idx = i
+            return max_idx
+        gap_deepest_idx = get_deepest_index(ranges, gap.left_index, gap.right_index)
 
         # 7. Finally, to get the steering angle that corresponds to the middle
         #    of the gape, use the lidar utils function to get the angle that
         #    corresponds to the index in the middle of the gap.
         angle_min_rad = self.__get_local_parameter("lidar_angle_min_rad")
-        gap_middle_angle = lu.get_angle_from_index(gap_middle_index, 
+        gap_middle_angle = lu.get_angle_from_index(gap_deepest_idx,  # TODO temporarily testing with deepest idx instead of middle!
                                                    angle_increment_rad=angle_increment_rad,
                                                    angle_min_rad=angle_min_rad)
         # Use the angle to this gap's middle as our new steering angle.
