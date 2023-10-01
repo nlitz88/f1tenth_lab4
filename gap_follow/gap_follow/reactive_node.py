@@ -299,7 +299,7 @@ class ReactiveFollowGap(Node):
         # 1. (TODO) Clamp all range values to maximum depth value. Choosing not
         #    to implement this first, just to see what performance is like
         #    without it.
-        lu.clip_range_values(ranges=ranges, min=0.0, max=2.5)
+        # lu.clip_range_values(ranges=ranges, min=0.0, max=2.5)
 
         # 2. Next, find all the index pairs in the ranges array where there is a
         #    disparity that exceeds the disparity threshold.
