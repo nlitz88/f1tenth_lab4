@@ -3,6 +3,7 @@ from typing import List, Any
 import rclpy
 from rclpy.node import Node
 from enum import Enum
+from copy import deepcopy
 
 import numpy as np
 from sensor_msgs.msg import LaserScan
@@ -30,6 +31,7 @@ class ReactiveFollowGap(Node):
         # Topics & Subs, Pubs
         lidarscan_topic = '/scan'
         drive_topic = '/drive'
+        processed_scan_topic = '/processed_scan'
 
         # Set up separate parameter dictionary and then declare the parameters.
         self.__parameters_mutex = Lock()
@@ -60,6 +62,11 @@ class ReactiveFollowGap(Node):
         self.__drive_publisher = self.create_publisher(msg_type=AckermannDriveStamped,
                                                        topic=drive_topic,
                                                        qos_profile=10)
+        # Create a new LiDAR publisher that will publish to a topic for the
+        # processed LiDAR readings (preprocessed+disparity-extended).
+        self.__processed_scan_publisher = self.create_publisher(msg_type=LaserScan,
+                                                                topic=processed_scan_topic,
+                                                                qos_profile=10)
         
         # Variable for robot width.
         self.__car_width_m = 0.2032
@@ -187,6 +194,20 @@ class ReactiveFollowGap(Node):
         # Publish the populated message to the drive topic.
         self.__drive_publisher.publish(drive_message)
         return
+    
+    def __publish_processed_ranges(self, ranges: List[float], original_scan_message: LaserScan) -> None:
+        """Takes a ranges array (originally from a LaserScan message) that has
+        been modified after preprocessing steps and publishes it back out as a
+        new LaserScan message.
+
+        Args:
+            ranges (List[float]): Updated ranges array.
+            original_scan_message (LaserScan): Original scan message. Other,
+            non-modified values are extracted from here.
+        """
+        new_scan_message = deepcopy(original_scan_message)
+        new_scan_message.ranges = ranges
+        self.__processed_scan_publisher.publish(new_scan_message)
     
     def velocity_from_steering_angle(self, steering_angle: float) -> float:
         """Piecewise function that returns a suitable longitudinal velocity
@@ -357,6 +378,7 @@ class ReactiveFollowGap(Node):
         # NOTE: steps 2 and 3 could probably be combined into a single function.
         # However, probably more testable and easier to understand if they're
         # separate for now.
+        
 
         # 4. Once the ranges array has been processed (padding locations where
         #    there is sufficient disparity, in the above case), we can now use a
@@ -409,7 +431,7 @@ class ReactiveFollowGap(Node):
         #    speed, or could also base it on steering angle.
         # new_speed =
         # self.velocity_from_steering_angle(steering_angle=new_steering_angle)
-        new_speed = self.speed_from_gap_max_depth(gap_max_depth=depth, max_speed=1.2, min_speed=0.3)
+        new_speed = self.speed_from_gap_max_depth(gap_max_depth=depth, max_speed=2.5, min_speed=0.3)
 
         # 7. Finally, call function to publish newly computed steering angle and
         #    speed.
@@ -458,6 +480,8 @@ class ReactiveFollowGap(Node):
 
             # Take the ranges and 
             self.__disparity_control_state(ranges=ranges)
+            # TEMPORARY: Publish the modified range array back for visualization.
+            self.__publish_processed_ranges(ranges=ranges, original_scan_message=laser_scan)
 
             # Guard Condition here.
             # If side is still too close, continue moving straight.
